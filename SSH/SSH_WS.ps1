@@ -1,3 +1,7 @@
+#********************************************************************************************************************************
+# ACTIVIDAD 4
+# Script para automatizar la creación de un servidor SSH
+
 # Para usar el cliente de ssh 
 Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
 
