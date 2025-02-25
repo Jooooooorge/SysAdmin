@@ -4,7 +4,7 @@
 
 # Asegurarnos de que el sistema esta actualizado
 sudo apt update
-sudo apt install openssh-server
+sudo apt install openssh-server -y
 
 
 # Configuración de la red estatica 
@@ -15,7 +15,7 @@ echo "network:
     enp0s3:
       dhcp4: false
       addresses:
-        - 192.168.0.120/24" | sudo tee /etc/netplan/00-installer-config.yaml > /dev/null
+        - 192.168.0.130/24" | sudo tee /etc/netplan/00-installer-config.yaml > /dev/null
 # Aplicar cambios de red
 sudo netplan apply  
 
