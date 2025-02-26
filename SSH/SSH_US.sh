@@ -6,6 +6,7 @@ source US.sh
 
 # Asegurarnos de que el sistema esta actualizado
 sudo apt update
+sudo apt install -y net-tools
 sudo apt install openssh-server -y
 
 # Llamada a la función para configurar la ip estatica

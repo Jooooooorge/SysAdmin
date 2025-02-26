@@ -42,7 +42,7 @@ StaticIpConfig() {
     # Configurar IP en la interfaz de red
     NetPrefix=$(CalculateNetMask "$IpAddress")
     if [[ -n "$NetPrefix" ]]; then
-           echo "network:
+    echo "network:
     version: 2
     renderer: networkd
     ethernets:
@@ -50,9 +50,9 @@ StaticIpConfig() {
       dhcp4: false
       addresses:
         - $IpAddress/$NetPrefix" | sudo tee /etc/netplan/00-installer-config.yaml > /dev/null
-
     # Aplicar cambios
     sudo netplan apply
+    
     echo "Configuración de red aplicada correctamente."
     else
         echo "Error: No se pudo calcular la máscara de subred. Verifique la IP ingresada."
