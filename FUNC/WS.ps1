@@ -43,7 +43,7 @@ function StaticIpConfig {
     # Configurar IP en la interfaz de red
     $NetPrefix = CalculateNetMask -IP $IpAddress
     if ($NetPrefix -ne $null) {
-        New-NetIPAddress -IPAddress $IpAddress -PrefixLength $NetPrefix -DefaultGateway $GateWay
+        New-NetIPAddress -IPAddress $IpAddress -PrefixLength $NetPrefix -DefaultGateway $GateWay -InterfaceIndex 6
         Set-DnsClientServerAddress -InterfaceIndex 4 -ServerAddresses "8.8.8.8"
         Write-Host "Configuración de red aplicada correctamente"
         Get-NetIPAddress -IPAddress $IpAddress
