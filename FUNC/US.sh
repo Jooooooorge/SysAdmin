@@ -42,10 +42,22 @@ StaticIpConfig() {
     # Configurar IP en la interfaz de red
     NetPrefix=$(CalculateNetMask "$IpAddress")
     if [[ -n "$NetPrefix" ]]; then
-        sudo ip addr add "$IpAddress/$NetPrefix" dev eth0
-        sudo ip route add default via "$GateWay"
-        echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf > /dev/null
-        echo "Configuración de red aplicada correctamente"
+           echo "network:
+    version: 2
+    renderer: networkd
+    ethernets:
+    enp0s3:
+      dhcp4: false
+      addresses:
+        - $IpAddress/$NetPrefix
+      gateway4: $GateWay
+      nameservers:
+        addresses:
+          - 8.8.8.8" | sudo tee /etc/netplan/00-installer-config.yaml > /dev/null
+
+    # Aplicar cambios
+    sudo netplan apply
+    echo "Configuración de red aplicada correctamente."
     else
         echo "Error: No se pudo calcular la máscara de subred. Verifique la IP ingresada."
     fi
