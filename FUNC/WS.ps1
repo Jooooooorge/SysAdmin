@@ -7,7 +7,7 @@
 function StaticIpConfig
 {
     # Capturar IP
-    while (true){
+    while (True){
         $IpAddress = Read-Host "Ingrese la dirección IP"
         if(ValidateIpAddress($IpAddress))
         {
@@ -20,7 +20,7 @@ function StaticIpConfig
         }
     }
     # Capturar Gateway 
-    while (true){
+    while (True){
         $GateWay = ExtractNetSegment($IpAddress)+"."+"1"
         Write-Output = "Puerta de enlace pedreterminada("+$GateWay+")"
         $opt = Read-Host "Desea cambiarla? [y] [n]:"
