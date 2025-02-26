@@ -45,8 +45,9 @@ function StaticIpConfig {
     if ($NetPrefix -ne $null) {
         New-NetIPAddress -IPAddress $IpAddress -PrefixLength $NetPrefix -DefaultGateway $GateWay -InterfaceIndex 6
         Set-DnsClientServerAddress -InterfaceIndex 6 -ServerAddresses "8.8.8.8"
-        Write-Host "Configuración de red aplicada correctamente"
         Get-NetIPAddress -IPAddress $IpAddress
+        Write-Host "Configuración de red aplicada correctamente"
+
     } else {
         Write-Host "Error: No se pudo calcular la máscara de subred. Verifique la IP ingresada."
     }

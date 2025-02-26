@@ -1,17 +1,9 @@
 #********************************************************************************************************************************
 # ACTIVIDAD 4
 # Script para automatizar la creación de un servidor SSH
-
+Import-Module .\WS.ps1 -Force
 # Cofiguración IP estatica
-# Datos fijos
-$IpAddress = "192.168.0.120"
-$PrefixLenght = 24
-$GateWay = "192.168.0.1"
-
-# Implementar función que valide la dirección, saque la mascara y me regrese el segmento de red
-# ---------------------------------------------------------------------------------------------
-New-NetIPAddress -IPAddress $IpAddress -PrefixLength $PrefixLenght -DefaultGateway $GateWay
-Set-DnsClientDohServerAddress -InterfaceIndex 4 -ServerAddress ("8.8.8.8") 
+StaticIpConfig
 # Para usar el cliente de ssh 
 Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
 
