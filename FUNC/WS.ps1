@@ -18,8 +18,8 @@ function StaticIpConfig {
 
     # Capturar Gateway 
     while ($true) {
-        $GateWay = ExtractNetSegment -IP $IpAddress + ".1"
-        Write-Host "Puerta de enlace predeterminada: $GateWay"
+        $GateWay = ExtractNetSegment -IP $IpAddress 
+        Write-Host "Puerta de enlace predeterminada:" $GateWay + ".1"
         $opt = Read-Host "¿Desea cambiarla? [y/n]"
         
         if ($opt.ToLower() -eq 'y') {
