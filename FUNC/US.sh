@@ -49,11 +49,7 @@ StaticIpConfig() {
     enp0s3:
       dhcp4: false
       addresses:
-        - $IpAddress/$NetPrefix
-      gateway4: $GateWay
-      nameservers:
-        addresses:
-          - 8.8.8.8" | sudo tee /etc/netplan/00-installer-config.yaml > /dev/null
+        - $IpAddress/$NetPrefix" | sudo tee /etc/netplan/00-installer-config.yaml > /dev/null
 
     # Aplicar cambios
     sudo netplan apply
