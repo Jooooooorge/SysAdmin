@@ -16,7 +16,7 @@ function StaticIpConfig
         } 
         else 
         {
-            Write-Output "Error: La dirección de gateway no es válida. Intente nuevamente."
+            Write-Output "Error: La dirección IP no es válida. Intente nuevamente."
         }
     }
     # Capturar Gateway 
