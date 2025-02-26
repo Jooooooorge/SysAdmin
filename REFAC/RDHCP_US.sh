@@ -1,14 +1,11 @@
 #********************************************************************************************************************************
-# ACTIVIDAD 4
-# Script para automatizar la creación de un servidor SSH
+# Script para automatizar la creación de un servidor DHCP personalizable
 
-# Importar funciones
-source US.sh
 
-# Asegurarnos de que el sistema esta actualizado
+# Actualizar e instalar paquetes necesarios
 sudo apt update
 sudo apt install -y net-tools
-sudo apt install openssh-server -y
+sudo apt install isc-dhcp-server -y
 
  # Capturar IP
 while true; do
@@ -30,14 +27,23 @@ echo "network:
       addresses:
         - $IpAddress/24" | sudo tee /etc/netplan/00-installer-config.yaml > /dev/null
 # Aplicar cambios de red
-sudo netplan apply  
+sudo netplan apply 
 
-# Habilitamos ssh
-sudo systemctl enable ssh
+# Realizar los siguientes cambios en los arhivos de configuración
+# del server DHCP /etc/dhcp/dhcp.conf
 
-# Habilitando el puerto 22 para el uso del SSH
-sudo ufw allow ssh
+echo "default-lease-time 43200;
+max-lease-time 86400;
+subnet 192.168.0.0 netmask 255.255.255.0 {
+  range 192.168.0.51 192.168.0.60;
+  option routers 192.168.0.1;
+}" | sudo tee /etc/dhcp/dhcpd.conf > /dev/null
 
-# Inciamos el servidor
-sudo systemctl start ssh
+
+echo "INTERFACESv4 = enp0s3" | sudo tee /etc/default/isc-dhcp-server > /dev/null
+
+# Reniciar y habilitar el servicio
+sudo systemctl enable isc-dhcp-server
+
+sudo systemctl start isc-dhcp-server
 

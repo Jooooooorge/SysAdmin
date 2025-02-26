@@ -4,6 +4,7 @@
 Import-Module .\WS.ps1 -Force
 # Cofiguración IP estatica
 StaticIpConfig
+
 # Para usar el cliente de ssh 
 Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
 
