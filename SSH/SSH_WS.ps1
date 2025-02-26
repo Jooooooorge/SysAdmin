@@ -7,6 +7,9 @@
 $IpAddress = "192.168.0.120"
 $PrefixLenght = 24
 $GateWay = "192.168.0.1"
+
+# Implementar función que valide la dirección, saque la mascara y me regrese el segmento de red
+# ---------------------------------------------------------------------------------------------
 New-NetIPAddress -IPAddress $IpAddress -PrefixLength $PrefixLenght -DefaultGateway $GateWay
 Set-DnsClientDohServerAddress -InterfaceIndex 4 -ServerAddress ("8.8.8.8") 
 # Para usar el cliente de ssh 
