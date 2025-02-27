@@ -28,7 +28,8 @@ echo "network:
     enp0s3:
       dhcp4: false
       addresses:
-        - $IpAddress/24" | sudo tee /etc/netplan/00-installer-config.yaml > /dev/null
+        - $IpAddress/24
+      gateway4: 192.168.0.1" | sudo tee /etc/netplan/00-installer-config.yaml > /dev/null
 # Aplicar cambios de red
 sudo netplan apply  
 
