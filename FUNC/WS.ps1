@@ -63,7 +63,6 @@ function CalcularMascara {
     param ([String] $Ip)
     $Seg = $Ip.Split(".")
     $SegRed = $Seg[0] -as [int]  # Convertir a número
-s
     switch ($SegRed) {
         {$_ -ge 0 -and $_ -le 127} { return 8 }   # Clase A
         {$_ -ge 128 -and $_ -le 191} { return 16 } # Clase B
