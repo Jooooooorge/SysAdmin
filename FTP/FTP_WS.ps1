@@ -29,7 +29,7 @@ if (Get-WindowsFeature | Where-Object { $_.Name -like "*ftp*" -and $_.Installed 
 try {
     #Configuración del servicio web
     Import-Module WebAdministration
-    
+
     New-WebFTPSite -Name "FTPServer" -IPAddress "*" -Port 21
 
     # Crear la carpete raíz del sitio:
@@ -47,7 +47,7 @@ try {
     Add-WebConfiguration "/system.ftpServer/security/authorization" -Location FTPServer -PSPath IIS:\ -Value @{accessType="Allow";users="?";permissions="Read"}
 
     # Autencitación básica
-    Set-ItemProperty "IIS:\Sites\FTPAislado" -Name ftpServer.security.authentication.basicAuthentication.enabled -Value $true
+    Set-ItemProperty "IIS:\Sites\FTPServer" -Name ftpServer.security.authentication.basicAuthentication.enabled -Value $true
 
 
     }
@@ -59,8 +59,8 @@ catch {
 # ---------------------------------------------------------------------
 while ($true)
 {
-    write-host"==========================="
-    write-host"=======SERVICIO FTP======="
+    Write-Host"==========================="
+    Write-Host"=======SERVICIO FTP======="
     Write-Host"[1] Iniciar Sesión"
     Write-Host"[2] Agregar Usuario"
     Write-host"[3] Editar Usuario"
@@ -72,7 +72,7 @@ while ($true)
         1{ }
         2{ }
         3{ }
-        4{ Return 0 }
+        4{ Return  }
         
         default{}
     }
