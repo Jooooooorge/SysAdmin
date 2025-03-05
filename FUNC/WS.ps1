@@ -2,13 +2,11 @@
 # Declaración de las funciones necesarias para le uso de los scripts
 
 # Función usada para configurar la red estatica
-# Entrada: 
-# Salida: Arreglo con las datos necesarios para la configuración
-function StaticIpConfig {
+function ConfigurarIpEstatica {
     # Capturar IP
     while ($true) {
-        $IpAddress = Read-Host "Ingrese la dirección IP"
-        if (ValidateIpAddress -IpAddress $IpAddress) {
+        $Ip = Read-Host "Ingrese la dirección IP"
+        if (ValidarIp -Ip $Ip) {
             Write-Host "Dirección IP capturada correctamente"
             break
         } else {
@@ -18,15 +16,15 @@ function StaticIpConfig {
 
     # Capturar Gateway 
     while ($true) {
-        $NetSegment = ExtractNetSegment -IP $IpAddress
-        $GateWay = "$NetSegment.1"
-        Write-Host 'Puerta de enlace predeterminada:' $GateWay
-        $opt = Read-Host "¿Desea cambiarla? [y/n]"
+        $SegRed = ExtraerSegmento -Ip $Ip
+        $PuertaEnlace = "$SegRed.1"
+        Write-Host 'Puerta de enlace predeterminada:' $PuertaEnlace
+        $Opc = Read-Host "¿Desea cambiarla? [y/n]"
         
-        if ($opt.ToLower() -eq 'y') {
+        if ($Opc.ToLower() -eq 'y') {
             while ($true) {
-                $GateWay = Read-Host "Ingrese el nuevo gateway"
-                if (ValidateIpAddress -IpAddress $GateWay) {
+                $PuertaEnlace = Read-Host "Ingrese el nuevo gateway"
+                if (ValidarIp -Ip $PuertaEnlace) {
                     Write-Host "Gateway capturado correctamente"
                     break
                 } else {
@@ -41,11 +39,11 @@ function StaticIpConfig {
     Write-Host "Servidor DNS asignado automáticamente..."
 
     # Configurar IP en la interfaz de red
-    $NetPrefix = CalculateNetMask -IP $IpAddress
-    if ($NetPrefix -ne $null) {
-        New-NetIPAddress -IPAddress $IpAddress -PrefixLength $NetPrefix -DefaultGateway $GateWay -InterfaceIndex 6
+    $PrefijoRed = CalcularMascara -Ip $Ip
+    if ($PrefijoRed -ne $null) {
+        New-NetIPAddress -IPAddress $Ip -PrefixLength $PrefijoRed -DefaultGateway $PuertaEnlace -InterfaceIndex 6
         Set-DnsClientServerAddress -InterfaceIndex 6 -ServerAddresses "8.8.8.8"
-        Get-NetIPAddress -IPAddress $IpAddress
+        Get-NetIPAddress -IPAddress $Ip
         Write-Host "Configuración de red aplicada correctamente"
 
     } else {
@@ -54,19 +52,19 @@ function StaticIpConfig {
 }
 
 # Función para extraer el segmento de red de una IP
-function ExtractNetSegment {
-    param ([String] $IP)
-    $Seg = $IP.Split(".")
+function ExtraerSegmento {
+    param ([String] $Ip)
+    $Seg = $Ip.Split(".")
     return "$($Seg[0]).$($Seg[1]).$($Seg[2])"
 }
 
 # Función para calcular la máscara de subred en formato de prefijo (CIDR)
-function CalculateNetMask {
-    param ([String] $IP)
-    $Seg = $IP.Split(".")
-    $NetSegment = $Seg[0] -as [int]  # Convertir a número
-
-    switch ($NetSegment) {
+function CalcularMascara {
+    param ([String] $Ip)
+    $Seg = $Ip.Split(".")
+    $SegRed = $Seg[0] -as [int]  # Convertir a número
+s
+    switch ($SegRed) {
         {$_ -ge 0 -and $_ -le 127} { return 8 }   # Clase A
         {$_ -ge 128 -and $_ -le 191} { return 16 } # Clase B
         {$_ -ge 192 -and $_ -le 223} { return 24 } # Clase C
@@ -75,15 +73,39 @@ function CalculateNetMask {
 }
 
 # Función para validar una dirección IP
-function ValidateIpAddress {
-    param ([String] $IpAddress)
-    $Pattern = '^(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)$'
-    return $IpAddress -match $Pattern
+function ValidarIp {
+    param ([String] $Ip)
+    $Patron = '^(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)$'
+    return $Ip -match $Patron
 }
 
 # Función para validar un dominio
-function ValidateDomain {
-    param ([String] $Domain)
-    $Pattern = '(^(([a-z]{2,})+\.)+([a-z]{2,})+)$'
-    return $Domain.ToLower() -match $Pattern
+function ValidarDominio {
+    param ([String] $Dominio)
+    $Patron = '(^(([a-z]{2,})+\.)+([a-z]{2,})+)$'
+    return $Dominio.ToLower() -match $Patron
 }
+
+
+# Función para imprimir menu FTP
+<# function ImprimirMenu {
+    write-host"==========================="
+    write-host"=======SERVICIO FTP======="
+    Write-Host"[1] Iniciar Sesión"
+    Write-Host"[2] Agregar Usuario"
+    Write-host"[3] Editar Usuario"
+    Write-Host"[4] Salir"
+    $opc = Read-Host "Selecciona una opción:"
+
+    switch ($opc)
+    {
+        1{ }
+        2{ }
+        3{ }
+        4{ Return 0 }
+        
+        default{}
+    }
+} #>
+
+
