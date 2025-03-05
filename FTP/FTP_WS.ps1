@@ -26,26 +26,58 @@ if (Get-WindowsFeature | Where-Object { $_.Name -like "*ftp*" -and $_.Installed 
     }
 }
 
-Import-Module WebAdministration
+try {
+    #Configuración del servicio web
+    Import-Module WebAdministration
+    
+    New-WebFTPSite -Name "FTPServer" -IPAddress "*" -Port 21
 
-#Configuración del servicio
-New-WebFTPSite -Name "FTPServer" -IPAddress "*" -Port 21
+    # Crear la carpete raíz del sitio:
+    if (!(Test-Path "C:\FTPServer"))
+    {
+        mkdir "c:\FTPServer\"
+    }
 
-# Crear la carpete raíz del sitio:
-if (!(Test-Path "C:\FTPServer"))
-{
-    mkdir "c:\FTPServer\"
+    # Asignar la carpeta raíz al sitio
+    Set-ItemProperty "IIS:\Sites\FTPServer" -Name PhysicalPath -value 'c:\FTPServer'
+
+    # Crear la configuración del usuario anonimo
+    # Activar la autenticacíon anonima ** Cambiar el nombre
+    Set-ItemProperty "IIS:\Sites\FTPServer" -Name ftpServer.security.authentication.anonymousAuthentication.enabled -Value $true
+    Add-WebConfiguration "/system.ftpServer/security/authorization" -Location FTPServer -PSPath IIS:\ -Value @{accessType="Allow";users="?";permissions="Read"}
+
+    # Autencitación básica
+    Set-ItemProperty "IIS:\Sites\FTPAislado" -Name ftpServer.security.authentication.basicAuthentication.enabled -Value $true
+
+
+    }
+catch {
+    Write-Host "Ocurrió un error en la configuración del IIS"
 }
-
-# Asignar la carpeta raíz al sitio
-Set-ItemProperty "IIS:\Sites\FTPServer" -Name PhysicalPath -value 'c:\FTPServer'
-
 
 # Usuarios
 # ---------------------------------------------------------------------
-# Activar la autenticacíon anonima ** Cambiar el nombre
-Set-ItemProperty "IIS:\Sites\FTPServer" -Name ftpServer.security.authentication.anonymousAuthentication.enabled -Value $true
-Add-WebConfiguration "/system.ftpServer/security/authorization" -Location FTPServer -PSPath IIS:\ -Value @{accessType="Allow";users="?";permissions="Read"}
+while ($true)
+{
+    write-host"==========================="
+    write-host"=======SERVICIO FTP======="
+    Write-Host"[1] Iniciar Sesión"
+    Write-Host"[2] Agregar Usuario"
+    Write-host"[3] Editar Usuario"
+    Write-Host"[4] Salir"
+    $opc = Read-Host "Selecciona una opción:"
+
+    switch ($opc)
+    {
+        1{ }
+        2{ }
+        3{ }
+        4{ Return 0 }
+        
+        default{}
+    }
+}
+
 
 #Crear las reglas de permisos para los usuarios
 Add-WebConfiguration "/system.ftpServer/security/authorization" -Location FTPServer 
