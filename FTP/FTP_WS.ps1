@@ -8,7 +8,7 @@
 #   -Publico
 
 # Instalación del servicio
-if (Get-WindowsFeature | Where-Object { $_.Name -like "*ftpsvc*" -and $_.Installed })
+if (Get-WindowsFeature | Where-Object { $_.Name -like "*ftp*" -and $_.Installed })
 {
     Write-Host "FTP Server está instalado."
 } else {
