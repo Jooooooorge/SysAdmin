@@ -86,25 +86,4 @@ function ValidarDominio {
 }
 
 
-# Función para imprimir menu FTP
-<# function ImprimirMenu {
-    write-host"==========================="
-    write-host"=======SERVICIO FTP======="
-    Write-Host"[1] Iniciar Sesión"
-    Write-Host"[2] Agregar Usuario"
-    Write-host"[3] Editar Usuario"
-    Write-Host"[4] Salir"
-    $opc = Read-Host "Selecciona una opción:"
-
-    switch ($opc)
-    {
-        1{ }
-        2{ }
-        3{ }
-        4{ Return 0 }
-        
-        default{}
-    }
-} #>
-
 
