@@ -57,12 +57,12 @@ if (Get-WindowsFeature | Where-Object { $_.Name -like "*ftp*" -and $_.Installed 
 # ---------------------------------------------------------------------
 while ($true)
 {
-    Write-Output"==========================="
-    Write-Output"=======SERVICIO FTP======="
-    Write-Output"[1] Iniciar Sesión"
-    Write-Output"[2] Agregar Usuario"
-    Write-Output"[3] Editar Usuario"
-    Write-Output"[4] Salir"
+    Write-Host "==========================="
+    Write-Host "=======SERVICIO FTP======="
+    Write-Host "[1] Iniciar Sesión"
+    Write-Host "[2] Agregar Usuario"
+    Write-host "[3] Editar Usuario"
+    Write-Host "[4] Salir"
     $opc = Read-Host "Selecciona una opción:"
 
     switch ($opc)
@@ -74,8 +74,8 @@ while ($true)
         2
         { 
             # Agregar Usuario
-            Write-Output "AGREGAR USUARIO"
-
+            Write-Host "AGREGAR USUARIO"
+            
         }
         3{ }
         4{ Return }
