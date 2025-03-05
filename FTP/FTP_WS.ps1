@@ -12,13 +12,14 @@ if (Get-WindowsFeature | Where-Object { $_.Name -like "*FTP-Server*" -and $_.Ins
 {
     Write-Host "FTP Server está instalado."
 } else {
-    Write-Host "FTP Server instalando..."
+    Write-Host "FTP Server instalandose..."
     install-windowsfeature web-ftp-server -includemanagementtools -includeallsubfeature -Quiet
-    if (Get-WindowsFeature | Where-Object { $_.Name -like "*FTP-Server*" -and $_.Installed }) 
+    
+}
+if (Get-WindowsFeature | Where-Object { $_.Name -like "*FTP-Server*" -and $_.Installed }) 
     {
         Write-Host "FTP Server instalado correctamente"
     }
-}
 Import-Module WebAdministration
 
 #Configuración del servicio
