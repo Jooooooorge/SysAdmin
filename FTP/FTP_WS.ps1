@@ -7,6 +7,12 @@
 #   -Grupo
 #   -Publico
 
+# Configuración de la ip estática
+Import-Module ..\FUNC\WS.ps1 -Force
+ConfigurarIpEstatica
+
+
+
 # Instalación del servicio y validación 
 if (Get-WindowsFeature | Where-Object { $_.Name -like "*ftp*" -and $_.Installed })
 {
@@ -28,7 +34,7 @@ New-WebFTPSite -Name "FTPServer" -IPAddress "*" -Port 21
 # Crear la carpete raíz del sitio:
 if (!(Test-Path "C:\FTPServer"))
 {
-    mkdir "c:\FTP\"
+    mkdir "c:\FTPServer\"
 }
 
 # Asignar la carpeta raíz al sitio
