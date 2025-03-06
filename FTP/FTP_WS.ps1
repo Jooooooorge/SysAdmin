@@ -34,6 +34,13 @@ if (Get-WindowsFeature | Where-Object { $_.Name -like "*ftp*" -and $_.Installed 
         if (!(Test-Path "C:\FTPServer"))
         {
             mkdir "c:\FTPServer\"
+
+            New-LocalGroup -Name Reprobados
+            mkdir "c:\FTPServer\Reprobados"
+            
+            New-LocalGroup -Name Recursadores
+            mkdir "c:\FTPServer\Recursadores"
+
         }
     
         # Asignar la carpeta raíz al sitio
@@ -55,7 +62,10 @@ if (Get-WindowsFeature | Where-Object { $_.Name -like "*ftp*" -and $_.Installed 
     
         # Aislamiento de usuarios
         Set-ItemProperty "IIS:\Sites\FTPServer" -Name ftpServer.userIsolation.mode -Value "IsolateRootDirectoryOnly"
-        }
+        
+        # Reinciar servicio
+        Restart-WebItem -PSPath 'IIS:\Sites\FTPAislado'    
+    }
     catch {
         Write-Host "Ocurrió un error en la configuración del IIS"
     }
@@ -79,17 +89,30 @@ while ($true)
             # Iniciar Sesion
             Write-Host "Iniciar Sesión"
             $Usuario = Read-Host "Usuario:"
-            $Contra = Read-Host "Contraseña"
+            $Contra = Read-Host -AsSecureString "Contraseña:"
         }
+
         2
         { 
             # Agregar Usuario
             Write-Host "AGREGAR USUARIO"
+
+            # Capturar Datos
             $Usuario = Read-Host "Usuario:"
-            $Contra = Read-Host "Contraseña"
+            $Contra = Read-Host "Contraseña:"
+            $Grupo = Read-Host "[1] Recursadores | [2] Reprobados:"
+            New-LocalUser -Name $Usuario -Password $Contra
+            Add-LocalGroupMember -GroupName $Grupo -Name $Usuario -Verbose
 
-            mkdir "c:\FTPServer\$Usuario"
-
+            # Crear la carpete del usuario:
+            if (!(Test-Path "C:\FTPServer\$Usuario"))
+            {
+                mkdir "c:\FTPServer\$Usuario"
+                icacls "c:\FTPServer\$Usuario" /grant "A"
+            }
+            
+            # Reinciar servicios
+            Restart-WebItem -PSPath 'IIS:\Sites\FTPAislado'
         }
         3{ }
         4{ Return }
