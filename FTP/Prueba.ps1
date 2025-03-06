@@ -106,10 +106,21 @@ while ($true) {
                 $Grupo = "Reprobados"
             }
 
+            
             # Crear el usuario
             try {
-                New-LocalUser -Name $Usuario -Password $Contra -FullName $Usuario -PasswordNeverExpires $true -AccountNeverExpires $true -ErrorAction Stop
+                # Crear el usuario
+                New-LocalUser -Name $Usuario -Password $Contra -FullName $Usuario -ErrorAction Stop
+
+                # Configurar que la contraseña nunca expire
+                Set-LocalUser -Name $Usuario -PasswordNeverExpires $true
+
+                # Configurar que la cuenta nunca expire
+                Set-LocalUser -Name $Usuario -AccountNeverExpires $true
+
+                # Asignar el usuario al grupo
                 Add-LocalGroupMember -Group $Grupo -Member $Usuario -ErrorAction Stop
+
                 Write-Host "Usuario $Usuario creado correctamente y asignado al grupo $Grupo."
             } catch {
                 Write-Host "Error al crear el usuario: $_"
