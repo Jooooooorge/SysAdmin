@@ -112,12 +112,6 @@ while ($true) {
                 # Crear el usuario
                 New-LocalUser -Name $Usuario -Password $Contra -FullName $Usuario -ErrorAction Stop
 
-                # Configurar que la contraseña nunca expire
-                Set-LocalUser -Name $Usuario 
-
-                # Configurar que la cuenta nunca expire
-                Set-LocalUser -Name $Usuario 
-
                 # Asignar el usuario al grupo
                 Add-LocalGroupMember -Group $Grupo -Member $Usuario -ErrorAction Stop
 
