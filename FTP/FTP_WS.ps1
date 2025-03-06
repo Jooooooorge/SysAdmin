@@ -34,6 +34,7 @@ if (Get-WindowsFeature | Where-Object { $_.Name -like "*ftp*" -and $_.Installed 
         if (!(Test-Path "C:\FTPServer"))
         {
             mkdir "c:\FTPServer\"
+            mkdir "c:\FTPServer\UsuariosLocales"
 
             New-LocalGroup -Name Reprobados
             mkdir "c:\FTPServer\Reprobados"
@@ -41,6 +42,7 @@ if (Get-WindowsFeature | Where-Object { $_.Name -like "*ftp*" -and $_.Installed 
             New-LocalGroup -Name Recursadores
             mkdir "c:\FTPServer\Recursadores"
 
+            mkdir "C:\FTPServer\Publico"
         }
     
         # Asignar la carpeta raíz al sitio
@@ -50,8 +52,7 @@ if (Get-WindowsFeature | Where-Object { $_.Name -like "*ftp*" -and $_.Installed 
         # Activar la autenticacíon anonima ** Cambiar el nombre
         Set-ItemProperty "IIS:\Sites\FTPServer" -Name ftpServer.security.authentication.anonymousAuthentication.enabled -Value $true
         Add-WebConfiguration "/system.ftpServer/security/authorization" -Location FTPServer -PSPath IIS:\ -Value @{accessType="Allow";users="?";permissions="Read"}
-        mkdir C:\inetpub\ftproot\FTPAislado\LocalUser\Public
-        icacls "C:\inetpub\ftproot\FTPAislado\LocalUser\Public" /grant "IUSR:(OI)(CI)(F)" /t
+        icacls "C:\FTPServer\Publico" /grant "IUSR:(OI)(CI)(R)" /t
        
         # Autencitación básica
         Set-ItemProperty "IIS:\Sites\FTPServer" -Name ftpServer.security.authentication.basicAuthentication.enabled -Value $true
@@ -64,7 +65,7 @@ if (Get-WindowsFeature | Where-Object { $_.Name -like "*ftp*" -and $_.Installed 
         Set-ItemProperty "IIS:\Sites\FTPServer" -Name ftpServer.userIsolation.mode -Value "IsolateRootDirectoryOnly"
         
         # Reinciar servicio
-        Restart-WebItem -PSPath 'IIS:\Sites\FTPAislado'    
+        Restart-WebItem -PSPath 'IIS:\Sites\FTPServer'    
     }
     catch {
         Write-Host "Ocurrió un error en la configuración del IIS"
@@ -86,10 +87,7 @@ while ($true)
     {
         1
         { 
-            # Iniciar Sesion
-            Write-Host "Iniciar Sesión"
-            $Usuario = Read-Host "Usuario:"
-            $Contra = Read-Host -AsSecureString "Contraseña:"
+            
         }
 
         2
@@ -101,16 +99,31 @@ while ($true)
             $Usuario = Read-Host "Usuario:"
             $Contra = Read-Host "Contraseña:"
             $Grupo = Read-Host "[1] Recursadores | [2] Reprobados:"
+            If($Grupo -eq 1)
+            {
+                $Grupo = "Recursadores"
+            } elseif ($Grupo -eq 2)
+            {
+                $Grupo = "Reprobados"
+            }
             New-LocalUser -Name $Usuario -Password $Contra
             Add-LocalGroupMember -GroupName $Grupo -Name $Usuario -Verbose
 
             # Crear la carpete del usuario:
             if (!(Test-Path "C:\FTPServer\$Usuario"))
             {
-                mkdir "c:\FTPServer\$Usuario"
-                icacls "c:\FTPServer\$Usuario" /grant "A"
+                mkdir "c:\FTPServer\UsuariosLocales\$Usuario"                
             }
-            
+
+            # Permitir Acceso al servidor FTP
+            Add-WebConfiguration "/system.ftpServer/security/authorization" -Location "FTPServer" -Value @{accessType="Allow";users=$Usuario;permissions="Read,Write"}
+
+
+            # Otorgar permisos
+            icacls "c:\FTPServer\UsuariosLocales\$Usuario" /grant "$Usuario :(OI)(CI)(M)" /t
+            icacls "c:\FTPServer\$Grupo" /grant "$Usuario :(OI)(CI)(M)" /t
+            icacls "c:\FTPServer\Publico" /grant "$Usuario :(OI)(CI)(M)" /t
+
             # Reinciar servicios
             Restart-WebItem -PSPath 'IIS:\Sites\FTPAislado'
         }

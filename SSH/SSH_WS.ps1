@@ -1,9 +1,9 @@
 #********************************************************************************************************************************
 # ACTIVIDAD 4
 # Script para automatizar la creación de un servidor SSH
-Import-Module .\WS.ps1 -Force
+Import-Module ..\FUNC\WS.ps1 -Force
 # Cofiguración IP estatica
-StaticIpConfig
+ConfigurarIpEstatica
 
 # Para usar el cliente de ssh 
 Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
