@@ -18,7 +18,7 @@ if (Get-WindowsFeature | Where-Object { $_.Name -like "*ftp*" -and $_.Installed 
     Write-Host "FTP Server está instalado."
 } else {
     Write-Host "FTP Server instalandose..."
-    # ConfigurarIpEstatica
+    ConfigurarIpEstatica
     install-windowsfeature web-ftp-server -includemanagementtools -includeallsubfeature 
     if (Get-WindowsFeature | Where-Object { $_.Name -like "*FTP-Server*" -and $_.Installed }) 
     {
@@ -28,7 +28,7 @@ if (Get-WindowsFeature | Where-Object { $_.Name -like "*ftp*" -and $_.Installed 
         #Configuración del servicio web
         Import-Module WebAdministration
     
-        New-WebFTPSite -Name "FTPServer" -IPAddress "*" -Port 21 -Force
+        New-WebFTPSite -Name "FTPServer" -IPAddress "192.168.1.111" -Port 21 -Force
     
         # Crear la carpete raíz del sitio:
         if (!(Test-Path "C:\FTPServer"))
