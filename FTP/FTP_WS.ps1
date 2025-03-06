@@ -18,7 +18,7 @@ if (Get-WindowsFeature | Where-Object { $_.Name -like "*ftp*" -and $_.Installed 
     Write-Host "FTP Server está instalado."
 } else {
     Write-Host "FTP Server instalandose..."
-    ConfigurarIpEstatica
+    # ConfigurarIpEstatica
     install-windowsfeature web-ftp-server -includemanagementtools -includeallsubfeature 
     if (Get-WindowsFeature | Where-Object { $_.Name -like "*FTP-Server*" -and $_.Installed }) 
     {
