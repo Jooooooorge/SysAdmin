@@ -87,7 +87,20 @@ while ($true)
     {
         1
         { 
-            ftp 192.168.1.111
+            # Capturar Datos
+            $Usuario = Read-Host "Usuario"
+            $Contra = Read-Host "Contraseña" -AsSecureString
+            $Grupo = Read-Host "[1] Recursadores | [2] Reprobados"
+            $Contra = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($Contra))             # Intentar conectar al servidor FTP
+            try {
+                $webclient = New-Object System.Net.WebClient
+                $webclient.Credentials = New-Object System.Net.NetworkCredential($username, $password)
+                $remoteDir = "ftp://192.168.1.111/UsuariosLocales/$username/"
+                $files = $webclient.DownloadString($remoteDir)
+                Write-Host "Inicio de sesión exitoso. Archivos en tu directorio: $files"
+            } catch {
+                Write-Host "Error: Credenciales incorrectas o no se pudo conectar al servidor."
+            }
         }
 
         2
@@ -96,9 +109,10 @@ while ($true)
             Write-Host "AGREGAR USUARIO"
 
             # Capturar Datos
-            $Usuario = Read-Host "Usuario:"
-            $Contra = Read-Host "Contraseña:" -AsSecureString
-            $Grupo = Read-Host "[1] Recursadores | [2] Reprobados:" 
+            $Usuario = Read-Host "Usuario"
+            $Contra = Read-Host "Contraseña" -AsSecureString
+            $Grupo = Read-Host "[1] Recursadores | [2] Reprobados"
+            $Contra = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($Contra)) 
             If($Grupo -eq 1)
             {
                 $Grupo = "Recursadores"
@@ -106,11 +120,11 @@ while ($true)
             {
                 $Grupo = "Reprobados"
             }
-            New-LocalUser -Name $Usuario -Password $Contra
+            New-LocalUser -Name $Usuario -Password $Contra -Force
             Add-LocalGroupMember -Group $Grupo -Member $Usuario -Verbose
 
             # Crear la carpete del usuario:
-            if (!(Test-Path "C:\FTPServer\$Usuario"))
+            if (!(Test-Path "C:\FTPServer\\UsuariosLocales\$Usuario"))
             {
                 mkdir "c:\FTPServer\UsuariosLocales\$Usuario"                
             }
