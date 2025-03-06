@@ -97,8 +97,8 @@ while ($true)
 
             # Capturar Datos
             $Usuario = Read-Host "Usuario:"
-            $Contra = Read-Host "Contraseña:"
-            $Grupo = Read-Host "[1] Recursadores | [2] Reprobados:"
+            $Contra = Read-Host "Contraseña:" -AsSecureString
+            $Grupo = Read-Host "[1] Recursadores | [2] Reprobados:" 
             If($Grupo -eq 1)
             {
                 $Grupo = "Recursadores"
@@ -107,7 +107,7 @@ while ($true)
                 $Grupo = "Reprobados"
             }
             New-LocalUser -Name $Usuario -Password $Contra
-            Add-LocalGroupMember -GroupName $Grupo -Name $Usuario -Verbose
+            Add-LocalGroupMember -Group $Grupo -Member $Usuario -Verbose
 
             # Crear la carpete del usuario:
             if (!(Test-Path "C:\FTPServer\$Usuario"))
@@ -125,7 +125,7 @@ while ($true)
             icacls "c:\FTPServer\Publico" /grant "$Usuario :(OI)(CI)(M)" /t
 
             # Reinciar servicios
-            Restart-WebItem -PSPath 'IIS:\Sites\FTPAislado'
+            Restart-WebItem -PSPath 'IIS:\Sites\FTPServer'
         }
         3{ }
         4{ Return }
@@ -141,8 +141,5 @@ while ($true)
 # Crearlo
 
 
-#Crear las reglas de permisos para los usuarios
-Add-WebConfiguration "/system.ftpServer/security/authorization" -Location FTPServer 
--PSPath IIS:\ -Value @{accessType="Allow";roles="Cuenta local";permissions="Read,Write"}
 
 
