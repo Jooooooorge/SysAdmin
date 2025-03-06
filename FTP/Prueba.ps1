@@ -98,33 +98,32 @@ while ($true) {
             $Usuario = Read-Host "Usuario"
             $Contra = Read-Host "Contraseña" -AsSecureString
             $Grupo = Read-Host "[1] Recursadores | [2] Reprobados"
-            $Contra = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($Contra))
 
+            # Asignar el grupo correspondiente
             if ($Grupo -eq 1) {
                 $Grupo = "Recursadores"
             } elseif ($Grupo -eq 2) {
                 $Grupo = "Reprobados"
             }
 
-            # Crear el usuario y asignarlo al grupo
-            New-LocalUser -Name $Usuario -Password $Contra -FullName $Usuario -PasswordNeverExpires $true -AccountNeverExpires $true -ErrorAction Stop
-            Add-LocalGroupMember -Group $Grupo -Member $Usuario -ErrorAction Stop
+            # Crear el usuario
+            try {
+                New-LocalUser -Name $Usuario -Password $Contra -FullName $Usuario -PasswordNeverExpires $true -AccountNeverExpires $true -ErrorAction Stop
+                Add-LocalGroupMember -Group $Grupo -Member $Usuario -ErrorAction Stop
+                Write-Host "Usuario $Usuario creado correctamente y asignado al grupo $Grupo."
+            } catch {
+                Write-Host "Error al crear el usuario: $_"
+            }
 
             # Crear la carpeta del usuario
             if (!(Test-Path "C:\FTPServer\UsuariosLocales\$Usuario")) {
                 New-Item -Path "C:\FTPServer\UsuariosLocales\$Usuario" -ItemType Directory
             }
 
-            # Permitir acceso al servidor FTP
-            Add-WebConfiguration "/system.ftpServer/security/authorization" -Location "FTPServer" -Value @{accessType="Allow";users=$Usuario;permissions="Read,Write"}
-
-            # Otorgar permisos
             # Otorgar permisos
             icacls "C:\FTPServer\UsuariosLocales\$Usuario" /grant "${Usuario}:(OI)(CI)(M)" /t
             icacls "C:\FTPServer\$Grupo" /grant "${Usuario}:(OI)(CI)(M)" /t
             icacls "C:\FTPServer\Publico" /grant "${Usuario}:(OI)(CI)(M)" /t
-
-            Write-Host "Usuario $Usuario creado correctamente y asignado al grupo $Grupo."
         }
 
         3 {
