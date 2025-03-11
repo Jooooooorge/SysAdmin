@@ -94,7 +94,7 @@ while ($true)
             $Contra = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($Contra))             # Intentar conectar al servidor FTP
             try {
                 $webclient = New-Object System.Net.WebClient
-                $webclient.Credentials = New-Object System.Net.NetworkCredential($username, $password)
+                $webclient.Credentials = New-Object System.Net.NetworkCredential($Usuario, $Contra)
                 $remoteDir = "ftp://192.168.1.111/UsuariosLocales/$username/"
                 $files = $webclient.DownloadString($remoteDir)
                 Write-Host "Inicio de sesión exitoso. Archivos en tu directorio: $files"

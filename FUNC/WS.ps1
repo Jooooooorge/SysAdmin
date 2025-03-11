@@ -85,5 +85,129 @@ function ValidarDominio {
     return $Dominio.ToLower() -match $Patron
 }
 
+# ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ======
+# HTTPS Typo
+function MenuServidores {
+    while ($true)
+    {
+        Write-Host " ========= ========= ========="
+        Write-Host " SERVIDOES WEB DISPONIBLES"
+        Write-Host " [1] Apache"
+        Write-Host " [2] Ejemplo"
+        Write-Host " [3] Ejemplo"
+        $opc = Read-Host "Selecciona un servidor"
+        if(($opc -eq 1) -or ($opc -eq 2) -or ($opc -eq 3) )
+        {
+            Return $opc
+        }
+        else
+        {
+            Write-Host "Opción no valida, vuelva a intentarlo..."    
+        }
+    }
+}
+function DescargarHTML {
+    Param([String] $url)
+    rm ./html.txt
+    $Archivo = "html.txt"
+    # Configurar opciones para Invoke-WebRequest
+    $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    
 
+    try {
+        # Descargar el contenido de la página
+        $response = Invoke-WebRequest -Uri $url -UserAgent $userAgent -Headers $headers -UseBasicParsing -ErrorAction Stop
+        $response.Content > $Archivo
+        Write-Output "HTML descargado correctamente en $Archivo."
+    } catch {
+        Write-Output "Error al descargar el HTML: $_"
+    }
+}
+function EncontrarLink {
+    param (
+        [String] $NomArchivo,
+        [String] $PatronRegex
+    )
+
+    # Nos aseguramos que la variable automatica este limpia
+    $Matches = $null # Devuelve las cadenas que coincide con el patrón
+    try {
+        $Archivo = Get-Content ".\$NomArchivo" -ErrorAction Stop
+        foreach ($Line in $Archivo) {
+            if ($Line -match $PatronRegex) {
+                rm .\html.txt
+                return $Matches[0]
+            }
+        }
+
+        # Si no retorna ningún match, no se encontraron coincidencias
+        Write-Output "No se encontró ninguna coincidencia."
+        return $null
+    } catch {
+        Write-Output "Error al leer el archivo: $_"
+    }    
+    
+}
+
+
+function Descargar{
+    param (
+        [String] $url,
+        [String] $Salida
+    )
+    try {
+        Invoke-WebRequest -Uri $url -OutFile $Salida -ErrorAction Stop
+        Write-Output "Descarga completada: $Salida"
+    } catch {
+        Write-Output "Error al descargar el archivo: $_"
+    }
+}
+
+function recibirArray{
+    param
+    (
+        [array] $Array,
+        [int] $opc 
+    )
+    $ElementoActual= $($Array[$opc])
+    $ElementoActual.EnlaceDEV = "Enlace type"
+    return $Array
+}
+
+function MenuDescarga {
+    param (
+        [INT] $opc, [array] $Servidores
+    )
+    $ServidorActual = $Servidores[$opc]
+    while ($true)
+    {
+        Write-Host "====== DESCARGAS DISPONIBLES ======"
+        Write-Host " [1] $($ServidorActual.NombreLTS) $($ServidorActual.VersionLTS)"
+        Write-Host " [2] $($ServidorActual.NombreDEV) $($ServidorActual.VersionDEV)"
+        $X = Read-Host "Seleccione una opción"
+        if ($X -eq 1)
+        {
+            DescargarHTML -url $($ArchivoActual.EnlaceLTS)
+            Write-Host"Debug MSJ PRE Enlace actual $($ServidorActual.EnlaceLTS)"
+            # Encontramos el url de descarga
+            $urlDescarga = EncontrarLink -NomArchivo "html.txt" -PatronRegex $($ServidorActual.PatronLTS) 
+            $urlFinal = "$($ServidorActual.EnlaceLTS)$urlDescarga"
+            
+            # Editamos el "record" para que en el enlace almacene el link de descarga directamente
+            $ServidorActual.EnlaceLTS = "$urlFinal"
+            Write-Host"Debug MSJ POST Enlace actual $($ServidorActual.EnlaceLTS)"
+            #Descargar -Url $($ServidorActual.EnlaceLTS) -Salida "c:\$($ServidorActual.NombreLTS)"
+
+        }
+        elseif ($X -eq 2)
+        {
+
+        }
+        else 
+        {
+            Write-Host "Seleccione una opción valida"
+            Read-Host "Presione una tecla para volver a intentarlo"    
+        }
+    }
+}
 
