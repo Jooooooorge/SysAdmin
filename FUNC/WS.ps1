@@ -92,11 +92,11 @@ function MenuServidores {
     {
         Write-Host " ========= ========= ========="
         Write-Host " SERVIDOES WEB DISPONIBLES"
-        Write-Host " [1] Apache"
+        Write-Host " [0] Apache"
+        Write-Host " [1] Ejemplo"
         Write-Host " [2] Ejemplo"
-        Write-Host " [3] Ejemplo"
         $opc = Read-Host "Selecciona un servidor"
-        if(($opc -eq 1) -or ($opc -eq 2) -or ($opc -eq 3) )
+        if(($opc -eq 0) -or ($opc -eq 1) -or ($opc -eq 2) )
         {
             Return $opc
         }
@@ -108,8 +108,12 @@ function MenuServidores {
 }
 function DescargarHTML {
     Param([String] $url)
-    rm ./html.txt
+    if (test-path "./html.txt")
+    {
+        rm html.txt
+    }
     $Archivo = "html.txt"
+
     # Configurar opciones para Invoke-WebRequest
     $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     
@@ -123,6 +127,8 @@ function DescargarHTML {
         Write-Output "Error al descargar el HTML: $_"
     }
 }
+
+
 function EncontrarLink {
     param (
         [String] $NomArchivo,
@@ -135,7 +141,6 @@ function EncontrarLink {
         $Archivo = Get-Content ".\$NomArchivo" -ErrorAction Stop
         foreach ($Line in $Archivo) {
             if ($Line -match $PatronRegex) {
-                rm .\html.txt
                 return $Matches[0]
             }
         }
@@ -150,52 +155,78 @@ function EncontrarLink {
 }
 
 
-function Descargar{
+function Instalacion{
     param (
         [String] $url,
-        [String] $Salida
+        [String] $NomZip
     )
-    try {
-        Invoke-WebRequest -Uri $url -OutFile $Salida -ErrorAction Stop
-        Write-Output "Descarga completada: $Salida"
-    } catch {
-        Write-Output "Error al descargar el archivo: $_"
+    # La carpeta servidor sera para almacenar los .zip de los servidores
+    if(!(test-path 'C:\Servidor'))
+    {
+        mkdir 'C:\Servidor'
     }
+
+    $Salida = "C:\Servidor\$NomZip.zip"
+    
+    # Iniciar la instalación
+    If(!(Test-Path $Salida))
+    {
+        $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    
+        try {
+            Invoke-WebRequest -Uri $($Servidores.EnlaceLTS) -UserAgent $userAgent -OutFile $Salida -ErrorAction Stop
+            Write-Output "Descarga exitosa."
+        } catch {
+            Write-Output "Error: $_"
+        }
+    }
+    # Descomprimimos 
+    Expand-Archive -LiteralPath $Salida -DestinationPath C:\ -Force
+
+
+    # Nos dirigimos a la carpeta que contiene el ejecutable
+    cd C:\Apache24\bin
+    try 
+    {
+        .\httpd.exe
+
+        Write-Host "Instalación completa"
+        Write-Host "http://localhost/"
+    }
+    catch 
+    {
+        Write-Host "Ocurrió un error en la instalación"
+    }
+    
+
 }
 
-function recibirArray{
-    param
-    (
-        [array] $Array,
-        [int] $opc 
-    )
-    $ElementoActual= $($Array[$opc])
-    $ElementoActual.EnlaceDEV = "Enlace type"
-    return $Array
-}
 
 function MenuDescarga {
     param (
         [INT] $opc, [array] $Servidores
     )
-    $ServidorActual = $Servidores[$opc]
+    $ServidorActual = $Servidores[0]
+    $ServidorActual
     while ($true)
     {
         Write-Host "====== DESCARGAS DISPONIBLES ======"
-        Write-Host " [1] $($ServidorActual.NombreLTS) $($ServidorActual.VersionLTS)"
-        Write-Host " [2] $($ServidorActual.NombreDEV) $($ServidorActual.VersionDEV)"
+        Write-Host " [1] $($ServidorActual.NombreLTS)"
+        Write-Host " [2] $($ServidorActual.NombreDEV)"
         $X = Read-Host "Seleccione una opción"
         if ($X -eq 1)
         {
             DescargarHTML -url $($ArchivoActual.EnlaceLTS)
-            Write-Host"Debug MSJ PRE Enlace actual $($ServidorActual.EnlaceLTS)"
+            Write-Host "Debug MSJ PRE Enlace actual $($ServidorActual.EnlaceLTS)"
+
             # Encontramos el url de descarga
             $urlDescarga = EncontrarLink -NomArchivo "html.txt" -PatronRegex $($ServidorActual.PatronLTS) 
             $urlFinal = "$($ServidorActual.EnlaceLTS)$urlDescarga"
             
             # Editamos el "record" para que en el enlace almacene el link de descarga directamente
             $ServidorActual.EnlaceLTS = "$urlFinal"
-            Write-Host"Debug MSJ POST Enlace actual $($ServidorActual.EnlaceLTS)"
+            
+            Write-Host "Debug MSJ POST Enlace actual $($ServidorActual.EnlaceLTS)"
             #Descargar -Url $($ServidorActual.EnlaceLTS) -Salida "c:\$($ServidorActual.NombreLTS)"
 
         }
@@ -211,3 +242,36 @@ function MenuDescarga {
     }
 }
 
+function ExtraerVersion {
+    param (
+        [String] $urlDescarga, [String] $Patron
+    )
+    
+    if($urlDescarga -match $Patron)
+    {
+        return $Matches[0]
+    }
+}
+
+function ActualizarDatos {
+    param (
+        [Array] $Array
+    )
+
+    foreach($Elemento in $Array)
+    {
+        # Meter la validación de que si tiene version DEV o nel
+        <#
+            Aqui
+        #>
+        DescargarHTML -url $($Elemento.EnlaceLTS)
+        $Link = EncontrarLink -NomArchivo "html.txt" -PatronRegex $($Elemento.PatronLTS)
+        $Link = "$($Elemento.EnlaceLTS)$Link"
+        $Elemento.EnlaceLTS = $Link
+
+        $Version = ExtraerVersion -urlDescarga $($Elemento.EnlaceLTS) -Patron $($Elemento.PatronVersion)
+        $Elemento.VersionLTS = $Version
+
+        # Depuración shit
+    }
+}
