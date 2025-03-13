@@ -48,10 +48,10 @@ Start-Process -FilePath "$env:TEMP\MicrosoftEdgeSetup.exe" -ArgumentList "/silen
 Get-ChildItem -Path "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 Start-Process -FilePath "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 
-ActualizarDatos -Array $Servidores
+<#ActualizarDatos -Array $Servidores
 While($true){
     $opc = MenuServidores
     MenuDescarga -opc $opc -Servidores $Servidores
-}
+}#>
 
 
