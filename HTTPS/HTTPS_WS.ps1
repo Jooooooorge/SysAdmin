@@ -42,11 +42,23 @@ $Servidores =@(
         PatronDEV = ''
     } #>
 )
-# Descargar navegador para poder acceder a las Web
-Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2109047&Channel=Stable&language=es" -OutFile "$env:TEMP\MicrosoftEdgeSetup.exe"
-Start-Process -FilePath "$env:TEMP\MicrosoftEdgeSetup.exe" -ArgumentList "/silent /install" -Wait
-Get-ChildItem -Path "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-Start-Process -FilePath "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+
+# Descargar el instalador de Google Chrome
+Invoke-WebRequest -Uri "https://dl.google.com/chrome/install/latest/chrome_installer.exe" -OutFile "$env:TEMP\chrome_installer.exe"
+
+# Instalar Google Chrome en modo silencioso
+Start-Process -FilePath "$env:TEMP\chrome_installer.exe" -ArgumentList "/silent /install" -Wait
+
+# Verificar la instalación
+$chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+if (Test-Path $chromePath) {
+    Write-Output "Google Chrome se instaló correctamente en: $chromePath"
+} else {
+    Write-Output "Error: No se pudo instalar Google Chrome."
+}
+
+# Abrir Google Chrome (opcional)
+Start-Process -FilePath $chromePath
 
 <#ActualizarDatos -Array $Servidores
 While($true){
