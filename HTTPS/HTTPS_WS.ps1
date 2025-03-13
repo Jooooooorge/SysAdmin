@@ -47,19 +47,20 @@ $Servidores =@(
 Invoke-WebRequest -Uri "https://dl.google.com/chrome/install/latest/chrome_installer.exe" -OutFile "$env:TEMP\chrome_installer.exe"
 
 # Instalar Google Chrome en modo silencioso
+Write-Output "Instalando Google Chrome..."
 Start-Process -FilePath "$env:TEMP\chrome_installer.exe" -ArgumentList "/silent /install" -Wait
 
 # Verificar la instalación
 $chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
 if (Test-Path $chromePath) {
     Write-Output "Google Chrome se instaló correctamente en: $chromePath"
+    
+    # Abrir Google Chrome (opcional)
+    Write-Output "Abriendo Google Chrome..."
+    Start-Process -FilePath $chromePath
 } else {
-    Write-Output "Error: No se pudo instalar Google Chrome."
+    Write-Output "Error: No se pudo instalar Google Chrome. Verifica la instalación manualmente."
 }
-
-# Abrir Google Chrome (opcional)
-Start-Process -FilePath $chromePath
-
 <#ActualizarDatos -Array $Servidores
 While($true){
     $opc = MenuServidores
