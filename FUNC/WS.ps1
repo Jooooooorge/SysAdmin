@@ -242,7 +242,8 @@ function Instalacion{
         Start-Service -Name Apache2.4
 
         Write-Host "Instalación completa"
-        Write-Host "http://localhost/"
+        [System.Diagnostics.Process]::start("msedge", "http://localhost/")
+        return
     }
     catch 
     {

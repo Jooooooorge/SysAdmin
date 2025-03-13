@@ -43,22 +43,12 @@ $Servidores =@(
     } #>
 )
 
-# Descargar el instalador de Edge
-Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2109047&Channel=Stable&language=es" -OutFile "$env:TEMP\MicrosoftEdgeSetup.exe"
 
-# Instalar Edge en modo silencioso
-Start-Process -FilePath "$env:TEMP\MicrosoftEdgeSetup.exe" -ArgumentList "/silent /install" -Wait
-
-# Verificar la instalación
-if (Test-Path "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe") {
-    Write-Output "Microsoft Edge se instaló correctamente."
-} else {
-    Write-Output "Error: No se pudo instalar Microsoft Edge."
-}
-<#ActualizarDatos -Array $Servidores
-While($true){
+ActualizarDatos -Array $Servidores
+while ($true)
+{
     $opc = MenuServidores
     MenuDescarga -opc $opc -Servidores $Servidores
-}#>
+}
 
 
