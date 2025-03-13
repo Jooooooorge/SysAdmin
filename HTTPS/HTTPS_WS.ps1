@@ -20,7 +20,6 @@ Import-Module ..\FUNC\WS.ps1 -Force
 # Variables
 $Servidores =  @()
 $opc = 0
-
 $Servidores =@(
     [PSCustomObject]@{
         NombreLTS = "ApacheLTS"
@@ -30,28 +29,31 @@ $Servidores =@(
         PatronVersion = '(\d{1,}\.\d{1,}\.\d{1,})'
     }
 
-    <#[PSCustomObject]@{
-        NombreLTS = "Nginx"
+    [PSCustomObject]@{
+        PatronVersion = '(\d{1}\.\d{1,}\.\d{1,})'
+
+        NombreLTS = "NginxLTS(Stable)"
         VersionLTS = ""
-        EnlaceLTS = "link devarar"
-        PatronLTS = ''
+        EnlaceLTS = "https://nginx.org/en/download.html"
+        PatronLTS = '(nginx\/Windows-\d{1}\.\d{1,}\.\d{1,})'
         
-        NombreDEV = ""
+        NombreDEV = "NginxDEV_(Mainline)"
         VersionDEV = ""
-        EnlaceDEV = ""
-        PatronDEV = ''
-    } #>
+        EnlaceDEV = "https://nginx.org/en/download.html"
+        PatronDEV = '(nginx\/Windows-\d{1}\.\d{1,}\.\d{1,})'
+    } 
 )
 
 # Instalación de las dependencias de c++
-Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "$env:TEMP\vc_redist.x64.exe"
-Start-Process -FilePath "$env:TEMP\vc_redist.x64.exe" -ArgumentList "/install /quiet /norestart" -Wait
 
-ActualizarDatos -Array $Servidores
-while ($true)
-{
-    $opc = MenuServidores
-    MenuDescarga -opc $opc -Servidores $Servidores
-}
+if (Test-Path "HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" ) {
+} else {
+    Write-Output "Instalando Microsoft Visual C++ Redistributable..."
+    Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "$env:TEMP\vc_redist.x64.exe"
+    Start-Process -FilePath "$env:TEMP\vc_redist.x64.exe" -ArgumentList "/install /quiet /norestart" -Wait
+} 
+ActualizarDatos -Array $Servidores 
+$opc = MenuServidores
+MenuDescarga -opc $opc -Servidores $Servidores
 
 

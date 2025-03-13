@@ -93,7 +93,7 @@ function MenuServidores {
         Write-Host " ========= ========= ========="
         Write-Host " SERVIDOES WEB DISPONIBLES"
         Write-Host " [0] Apache"
-        Write-Host " [1] Ejemplo"
+        Write-Host " [1] Nginx"
         Write-Host " [2] ISS"
         $opc = Read-Host "Selecciona un servidor"
         if(($opc -eq 0) -or ($opc -eq 1) -or ($opc -eq 2) )
@@ -116,16 +116,25 @@ function MenuDescarga {
     while ($true)
     {
         Write-Host "====== DESCARGAS DISPONIBLES ======"
-        Write-Host " [1] $($ServidorActual.NombreLTS)"
-        Write-Host " [2] $($ServidorActual.NombreDEV)"
-        $X = Read-Host "Seleccione una opción"
-        if ($X -eq 1)
+        if ($opc = 0 )
         {
-            Instalacion -url $Servidores.EnlaceLTS -NomZip $Servidores.NombreLTS
+            Write-Host " [1] $($ServidorActual.NombreLTS) --Version $($ServidorActual.VersionLTS)"
         }
-        elseif ($X -eq 2)
+        elseif($opc = 1)
         {
-
+            Write-Host " [1] $($ServidorActual.NombreDEV) --Version $($ServidorActual.VersionDEV)"
+        }
+        
+        $X = Read-Host "Seleccione una opción"
+        if ($X -eq 1 -and $opc -eq 0)
+        {
+            Instalacion -url $ServidorActual.EnlaceLTS -NomZip $ServidorActual.NombreLTS -opc $opc
+            return
+        }
+        elseif ($X -eq 1 -and $opc -eq 1)
+        {
+            Instalacion -url $ServidorActual.EnlaceDEV -NomZip $ServidorActual.NombreDEV -opc $opc
+            return
         }
         else 
         {
@@ -140,20 +149,63 @@ function ActualizarDatos {
         [Array] $Array
     )
 
+    $opc = 0
     foreach($Elemento in $Array)
     {
         # Meter la validación de que si tiene version DEV o nel
         <#
             Aqui
         #>
-        DescargarHTML -url $($Elemento.EnlaceLTS)
-        $Link = EncontrarLink -NomArchivo "html.txt" -PatronRegex $($Elemento.PatronLTS)
-        $Link = "$($Elemento.EnlaceLTS)$Link"
-        $Elemento.EnlaceLTS = $Link
+        if ($opc -eq 0)
+        {
+            # Actualizar datos Apache
+            DescargarHTML -url $($Elemento.EnlaceLTS)
+            $Link = EncontrarLink -NomArchivo "html.txt" -PatronRegex $($Elemento.PatronLTS)
+            $Link = "$($Elemento.EnlaceLTS)$Link"
+            $Elemento.EnlaceLTS = $Link
 
-        $Version = ExtraerVersion -urlDescarga $($Elemento.EnlaceLTS) -Patron $($Elemento.PatronVersion)
-        $Elemento.VersionLTS = $Version
+            $Version = ExtraerVersion -urlDescarga $($Elemento.EnlaceLTS) -Patron $($Elemento.PatronVersion)
+            $Elemento.VersionLTS = $Version
+        } 
+        elseif ($opc -eq 1) 
+        {
+            # Actualizar dato Nginx
+            DescargarHTML -url $($Elemento.EnlaceLTS)
+            $Link = EncontrarLinkDEV -NomArchivo "html.txt" -PatronRegex $($Elemento.PatronLTS)
+            $LinkSinExtension = $($Elemento.EnlaceLTS) 
+            $LinkSinExtension = $LinkSinExtension -replace "\.html", ""
+            $LinkSinExtension = $LinkSinExtension -replace "\/en", ""
+            $Version = ExtraerVersion -urlDescarga $Link -Patron $($Elemento.PatronVersion)
+            $Elemento.VersionLTS = $Version
+            $Elemento.EnlaceLTS = "$LinkSinExtension/nginx-$Version.tar.gz"
 
+            #Version DEV
+            $Link = ""
+            $LinkSinExtension = ""
+            $Version = ""
+
+            $Link = EncontrarLink -NomArchivo "html.txt" -PatronRegex $($Elemento.PatronDEV)
+            $LinkSinExtension = $($Elemento.EnlaceDEV)
+            $LinkSinExtension = $LinkSinExtension -replace "\.html", ""
+            $LinkSinExtension = $LinkSinExtension -replace "\/en", ""
+            $Version = ExtraerVersion -urlDescarga $Link -Patron $($Elemento.PatronVersion)
+            $Elemento.VersionDEV = $Version
+            $Elemento.EnlaceDEV = "$LinkSinExtension/nginx-$Version.tar.gz"
+
+1
+        }
+        <#elseif ($opc -eq 2) 
+        {
+            DescargarHTML -url $($Elemento.EnlaceLTS)
+            $Link = EncontrarLink -NomArchivo "html.txt" -PatronRegex $($Elemento.PatronLTS)
+            $Link = "$($Elemento.EnlaceLTS)$Link.zip"
+            $Elemento.EnlaceLTS = $Link
+
+            $Version = ExtraerVersion -urlDescarga $($Elemento.EnlaceLTS) -Patron $($Elemento.PatronVersion)
+            $Elemento.VersionLTS = $Version
+        }#>
+        
+        $opc++
     }
 }
 
@@ -195,7 +247,6 @@ function EncontrarLink {
                 return $Matches[0]
             }
         }
-
         # Si no retorna ningún match, no se encontraron coincidencias
         Write-Output "No se encontró ninguna coincidencia."
         return $null
@@ -204,50 +255,130 @@ function EncontrarLink {
     }    
     
 }
+function EncontrarLinkDEV {
+    param (
+        [String] $NomArchivo,
+        [String] $PatronRegex
+    )
+    # En este caso tenemos multiples versiones, así que vamos a buscar la 2da
+    $coincidencias = @()
+    # Nos aseguramos que la variable automatica este limpia
+    $Matches = $null # Devuelve las cadenas que coincide con el patrón
+    try {
+        $Archivo = Get-Content ".\$NomArchivo" -Raw -ErrorAction Stop  # Leer el archivo como un solo bloque
+        if ($Archivo -match $PatronRegex) {
+            $coincidencias = [regex]::Matches($Archivo, $PatronRegex) | ForEach-Object { $_.Value }
+        }
+
+        # Verificar si hay al menos dos coincidencias y devolver la segunda
+        if ($coincidencias.Count -ge 2) {
+            return $coincidencias[1]
+        } else {
+            Write-Output "No se encontró una segunda coincidencia."
+            return $null
+        }
+    } catch {
+        Write-Output "Error al leer el archivo: $_"
+    }
+    
+}
 
 
-function Instalacion{
+function Instalacion {
     param (
         [String] $url,
-        [String] $NomZip
+        [String] $NomZip,
+        [int] $opc
     )
-    # La carpeta servidor sera para almacenar los .zip de los servidores
-    if(!(test-path 'C:\Servidor'))
-    {
+
+    # La carpeta Servidor será para almacenar los .zip de los servidores
+    if (!(Test-Path 'C:\Servidor')) {
         mkdir 'C:\Servidor'
     }
 
-    $Salida = "C:\Servidor\$NomZip.zip"
     
-    # Iniciar la instalación
-    If(!(Test-Path $Salida))
-    {
-        $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     
-        try {
-            Invoke-WebRequest -Uri $($Servidores.EnlaceLTS) -UserAgent $userAgent -OutFile $Salida -ErrorAction Stop
-            Write-Output "Descarga exitosa."
-        } catch {
-            Write-Output "Error: $_"
-        }
-    }
-    # Descomprimimos 
-    Expand-Archive -LiteralPath $Salida -DestinationPath C:\ -Force
-
     # Nos dirigimos a la carpeta que contiene el ejecutable
-    cd C:\Apache24\bin
-    try 
-    {
-        .\httpd.exe -k install
-        Start-Service -Name Apache2.4
+    switch ($opc) {
+        # Instalar Apache
+        0 {
+            write-Host "Url: $url"
+            Write-Host "Creación de la ruta del zip"
+            $Salida = "C:\Servidor\$NomZip.zip"
 
-        Write-Host "Instalación completa"
-        [System.Diagnostics.Process]::start("msedge", "http://localhost/")
-        return
-    }
-    catch 
-    {
-        Write-Host "Ocurrió un error en la instalación"
+            # Iniciar la instalación
+            if (!(Test-Path $Salida)) {
+                $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+
+                try {
+                    Write-Host "Se realiza la petición"
+                    Invoke-WebRequest -Uri $url -UserAgent $userAgent -OutFile $Salida -ErrorAction Stop
+                    Write-Output "Descarga exitosa."
+                } catch {
+                    Write-Output "Error: $_"
+                    return  # Salir de la función si hay un error en la descarga
+                }
+            }
+            Expand-Archive -LiteralPath $Salida -DestinationPath "C:\" -Force
+
+            cd C:\Apache24\bin
+            try {
+                .\httpd.exe -k install
+                Start-Service -Name Apache2.4
+                Write-Host "Instalación completa"
+                [System.Diagnostics.Process]::Start("msedge", "http://localhost/")
+            } catch {
+                Write-Host "Ocurrió un error en la instalación de Apache: $_"
+            }
+        }
+
+        # Instalar Nginx
+        1 {
+            write-Host "Url: $url"
+            Write-Host "Creación de la ruta del zip"
+            $Salida = "C:\Servidor\$NomZip.tar.gz"
+
+            # Iniciar la instalación
+            if (!(Test-Path $Salida)) {
+                $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+
+                try {
+                    Write-Host "Se realiza la petición"
+                    Invoke-WebRequest -Uri $url -UserAgent $userAgent -OutFile $Salida -ErrorAction Stop
+                    Write-Output "Descarga exitosa."
+                } catch {
+                    Write-Output "Error: $_"
+                    return  # Salir de la función si hay un error en la descarga
+                }
+            }
+
+            Write-Host "Descomprimir"
+            # Descomprimimos el archivo ZIP
+            try {
+                tar -xzf $Salida -C "C:\"
+                Write-Output "Extracción exitosa."
+            } catch {
+                Write-Output "Error al extraer el archivo ZIP: $_"
+                return  # Salir de la función si hay un error en la extracción
+            }
+
+            if (Test-Path "C:\nginx-1.27.4") {
+                # Cambiar a la carpeta seleccionada
+                cd "C:\nginx-1.27.4"
+
+                # Iniciar Nginx
+                try {
+                    start nginx
+                    Write-Host "Nginx iniciado correctamente."
+                    [System.Diagnostics.Process]::Start("msedge", "http://localhost/")
+                    Start-Sleep -Seconds 10
+                    return
+
+                } catch {
+                    Write-Host "Error al iniciar Nginx: $_"
+                }
+            }
+        }
     }
 }
 
