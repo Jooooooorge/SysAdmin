@@ -20,7 +20,6 @@ Import-Module ..\FUNC\WS.ps1 -Force
 # Variables
 $Servidores =  @()
 $opc = 0
-$PatronVersion = 
 
 $Servidores =@(
     [PSCustomObject]@{
@@ -32,9 +31,9 @@ $Servidores =@(
     }
 
     <#[PSCustomObject]@{
-        NombreLTS = ""
+        NombreLTS = "Nginx"
         VersionLTS = ""
-        EnlaceLTS = ""
+        EnlaceLTS = "link devarar"
         PatronLTS = ''
         
         NombreDEV = ""
@@ -43,9 +42,16 @@ $Servidores =@(
         PatronDEV = ''
     } #>
 )
+# Descargar navegador para poder acceder a las Web
+Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2109047&Channel=Stable&language=es" -OutFile "$env:TEMP\MicrosoftEdgeSetup.exe"
+Start-Process -FilePath "$env:TEMP\MicrosoftEdgeSetup.exe" -ArgumentList "/silent /install" -Wait
+Get-ChildItem -Path "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+Start-Process -FilePath "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 
 ActualizarDatos -Array $Servidores
-Instalacion -url $Servidores.EnlaceLTS -NomZip $Servidores.NombreLTS
-# $opc = MenuServidores
-# MenuDescarga -opc $opc -Servidores $Servidores
+While($true){
+    $opc = MenuServidores
+    MenuDescarga -opc $opc -Servidores $Servidores
+}
+
 

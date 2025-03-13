@@ -94,7 +94,7 @@ function MenuServidores {
         Write-Host " SERVIDOES WEB DISPONIBLES"
         Write-Host " [0] Apache"
         Write-Host " [1] Ejemplo"
-        Write-Host " [2] Ejemplo"
+        Write-Host " [2] ISS"
         $opc = Read-Host "Selecciona un servidor"
         if(($opc -eq 0) -or ($opc -eq 1) -or ($opc -eq 2) )
         {
@@ -106,6 +106,57 @@ function MenuServidores {
         }
     }
 }
+
+function MenuDescarga {
+    param (
+        [INT] $opc, [array] $Servidores
+    )
+    $ServidorActual = $Servidores[$opc]
+    $ServidorActual
+    while ($true)
+    {
+        Write-Host "====== DESCARGAS DISPONIBLES ======"
+        Write-Host " [1] $($ServidorActual.NombreLTS)"
+        Write-Host " [2] $($ServidorActual.NombreDEV)"
+        $X = Read-Host "Seleccione una opción"
+        if ($X -eq 1)
+        {
+            Instalacion -url $Servidores.EnlaceLTS -NomZip $Servidores.NombreLTS
+        }
+        elseif ($X -eq 2)
+        {
+
+        }
+        else 
+        {
+            Write-Host "Seleccione una opción valida"
+            Read-Host "Presione una tecla para volver a intentarlo"    
+        }
+    }
+}
+
+function ActualizarDatos {
+    param (
+        [Array] $Array
+    )
+
+    foreach($Elemento in $Array)
+    {
+        # Meter la validación de que si tiene version DEV o nel
+        <#
+            Aqui
+        #>
+        DescargarHTML -url $($Elemento.EnlaceLTS)
+        $Link = EncontrarLink -NomArchivo "html.txt" -PatronRegex $($Elemento.PatronLTS)
+        $Link = "$($Elemento.EnlaceLTS)$Link"
+        $Elemento.EnlaceLTS = $Link
+
+        $Version = ExtraerVersion -urlDescarga $($Elemento.EnlaceLTS) -Patron $($Elemento.PatronVersion)
+        $Elemento.VersionLTS = $Version
+
+    }
+}
+
 function DescargarHTML {
     Param([String] $url)
     if (test-path "./html.txt")
@@ -183,12 +234,12 @@ function Instalacion{
     # Descomprimimos 
     Expand-Archive -LiteralPath $Salida -DestinationPath C:\ -Force
 
-
     # Nos dirigimos a la carpeta que contiene el ejecutable
     cd C:\Apache24\bin
     try 
     {
-        .\httpd.exe
+        .\httpd.exe -k install
+        Start-Service -Name Apache2.4
 
         Write-Host "Instalación completa"
         Write-Host "http://localhost/"
@@ -197,50 +248,8 @@ function Instalacion{
     {
         Write-Host "Ocurrió un error en la instalación"
     }
-    
-
 }
 
-
-function MenuDescarga {
-    param (
-        [INT] $opc, [array] $Servidores
-    )
-    $ServidorActual = $Servidores[0]
-    $ServidorActual
-    while ($true)
-    {
-        Write-Host "====== DESCARGAS DISPONIBLES ======"
-        Write-Host " [1] $($ServidorActual.NombreLTS)"
-        Write-Host " [2] $($ServidorActual.NombreDEV)"
-        $X = Read-Host "Seleccione una opción"
-        if ($X -eq 1)
-        {
-            DescargarHTML -url $($ArchivoActual.EnlaceLTS)
-            Write-Host "Debug MSJ PRE Enlace actual $($ServidorActual.EnlaceLTS)"
-
-            # Encontramos el url de descarga
-            $urlDescarga = EncontrarLink -NomArchivo "html.txt" -PatronRegex $($ServidorActual.PatronLTS) 
-            $urlFinal = "$($ServidorActual.EnlaceLTS)$urlDescarga"
-            
-            # Editamos el "record" para que en el enlace almacene el link de descarga directamente
-            $ServidorActual.EnlaceLTS = "$urlFinal"
-            
-            Write-Host "Debug MSJ POST Enlace actual $($ServidorActual.EnlaceLTS)"
-            #Descargar -Url $($ServidorActual.EnlaceLTS) -Salida "c:\$($ServidorActual.NombreLTS)"
-
-        }
-        elseif ($X -eq 2)
-        {
-
-        }
-        else 
-        {
-            Write-Host "Seleccione una opción valida"
-            Read-Host "Presione una tecla para volver a intentarlo"    
-        }
-    }
-}
 
 function ExtraerVersion {
     param (
@@ -253,25 +262,3 @@ function ExtraerVersion {
     }
 }
 
-function ActualizarDatos {
-    param (
-        [Array] $Array
-    )
-
-    foreach($Elemento in $Array)
-    {
-        # Meter la validación de que si tiene version DEV o nel
-        <#
-            Aqui
-        #>
-        DescargarHTML -url $($Elemento.EnlaceLTS)
-        $Link = EncontrarLink -NomArchivo "html.txt" -PatronRegex $($Elemento.PatronLTS)
-        $Link = "$($Elemento.EnlaceLTS)$Link"
-        $Elemento.EnlaceLTS = $Link
-
-        $Version = ExtraerVersion -urlDescarga $($Elemento.EnlaceLTS) -Patron $($Elemento.PatronVersion)
-        $Elemento.VersionLTS = $Version
-
-        # Depuración shit
-    }
-}
