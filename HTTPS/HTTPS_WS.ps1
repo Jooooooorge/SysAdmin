@@ -43,6 +43,9 @@ $Servidores =@(
     } #>
 )
 
+# Instalación de las dependencias de c++
+Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "$env:TEMP\vc_redist.x64.exe"
+Start-Process -FilePath "$env:TEMP\vc_redist.x64.exe" -ArgumentList "/install /quiet /norestart" -Wait
 
 ActualizarDatos -Array $Servidores
 while ($true)
