@@ -34,17 +34,14 @@ function ConfigurarIpEstatica {
         }
         break
     }
-
-    Write-Host "Mascara de Subred configurada automáticamente..."
-    Write-Host "Servidor DNS asignado automáticamente..."
-
     # Configurar IP en la interfaz de red
     $PrefijoRed = CalcularMascara -Ip $Ip
     if ($PrefijoRed -ne $null) {
         New-NetIPAddress -IPAddress $Ip -PrefixLength $PrefijoRed -DefaultGateway $PuertaEnlace -InterfaceIndex 6
         Set-DnsClientServerAddress -InterfaceIndex 6 -ServerAddresses "8.8.8.8"
-        Get-NetIPAddress -IPAddress $Ip
         Write-Host "Configuración de red aplicada correctamente"
+        Restart-NetAdapter -InterfaceIndex 6
+
 
     } else {
         Write-Host "Error: No se pudo calcular la máscara de subred. Verifique la IP ingresada."

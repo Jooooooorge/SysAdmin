@@ -1,6 +1,6 @@
 # Función utilizada para imprimir el menu
 
-functiom(){
+MenuServidores (){
     Echo " ========= ========= ========="
     Echo " SERVIDOES WEB DISPONIBLES"
     Echo " [0] Apache"
@@ -16,3 +16,5 @@ functiom(){
         echo "Elegiste una opción no valida"
     fi
 }
+
+MenuDescargas(Int $opc)
