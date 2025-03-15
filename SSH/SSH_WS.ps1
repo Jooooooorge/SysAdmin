@@ -1,7 +1,7 @@
 #********************************************************************************************************************************
 # ACTIVIDAD 4
 # Script para automatizar la creación de un servidor SSH
-Import-Module ..\FUNC\WS.ps1 -Force
+Import-Module ..\FUNC\WS.psm1 -Force
 
 # Cofiguración IP estatica
 ConfigurarIpEstatica
