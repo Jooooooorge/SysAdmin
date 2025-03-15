@@ -1,0 +1,7 @@
+SSH
+Copiar y pegar CLIENTE-SERVIDOR
+scp "C:\ruta\del\archivo.txt" usuario@ip-de-la-vm:C:\ruta\destino\
+
+Ejecutar Scripts
+ssh administrador@192.168.1.100 "powershell C:\Scripts\mi_script.ps1"
+

@@ -15,7 +15,7 @@
     DEV 2.4.69
 #>
 # Funciones necesarias
-Import-Module .\WS.psm1 -Force
+Import-Module "$PSScriptRoot\WS.psm1" -Force
 
 # Variables
 $Servidores =  @()
