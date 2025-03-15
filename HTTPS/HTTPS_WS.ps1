@@ -27,6 +27,7 @@ $Servidores =@(
         EnlaceLTS = "https://www.apachelounge.com/download"
         PatronLTS = '\/VS17\/binaries\/httpd-\d{1,}\.\d{1,}\.\d{1,}-\d{1,}-win64-VS\d{2}\.zip'
         PatronVersion = '(\d{1,}\.\d{1,}\.\d{1,})'
+        NombreDEV = "N/A"
     }
 
     [PSCustomObject]@{

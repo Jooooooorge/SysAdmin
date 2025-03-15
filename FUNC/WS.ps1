@@ -116,30 +116,47 @@ function MenuDescarga {
     while ($true)
     {
         Write-Host "====== DESCARGAS DISPONIBLES ======"
-        if ($opc = 0 )
+        Write-Host "$($ServidorActual.NombreLTS) $($ServidorActual.VersionLTS)"
+        Write-Host "$($ServidorActual.NombreDEV) $($ServidorActual.VersionDEV)"
+
+        <#elseif($opc = 1)
         {
             Write-Host " [1] $($ServidorActual.NombreLTS) --Version $($ServidorActual.VersionLTS)"
-        }
-        elseif($opc = 1)
-        {
-            Write-Host " [1] $($ServidorActual.NombreDEV) --Version $($ServidorActual.VersionDEV)"
-        }
+            Write-Host " [2] $($ServidorActual.NombreDEV) --Version $($ServidorActual.VersionDEV)"
+        }#>
         
         $X = Read-Host "Seleccione una opción"
-        if ($X -eq 1 -and $opc -eq 0)
+        Write-Host "Seleccionado: $($ServidorActual.NombreLTS) --Version $($ServidorActual.VersionLTS)"
+        $Port = Read-Host "Elige un puerto para instalar"
+        
+        <#
+            Meter validación para impedir que puedas pedir que se pida la versión DEV con apache
+            Podría ser al momento de verificar que el nombre de la versión exista y después llamar
+            a la instalación
+        #>
+        if ($X -eq 1)
         {
             Instalacion -url $ServidorActual.EnlaceLTS -NomZip $ServidorActual.NombreLTS -opc $opc
-            return
+            break
         }
-        elseif ($X -eq 1 -and $opc -eq 1)
+        elseif ($X -eq 2)
         {
-            Instalacion -url $ServidorActual.EnlaceDEV -NomZip $ServidorActual.NombreDEV -opc $opc
-            return
+            if($($ServidorActual.NombreDEV -ne $null))
+            {
+                Instalacion -url $ServidorActual.EnlaceDEV -NomZip $ServidorActual.NombreDEV -opc $opc
+                break
+            }
+            else 
+            {
+                Write-Host "Este servidor no cuenta con versión de Desarollo"
+                Write-Host "Selecciona una opción valida...."
+            }
+
         }
         else 
         {
             Write-Host "Seleccione una opción valida"
-            Read-Host "Presione una tecla para volver a intentarlo"    
+            Read-Host "Presione una tecla para volver a intentarlo"
         }
     }
 }
@@ -177,7 +194,7 @@ function ActualizarDatos {
             $LinkSinExtension = $LinkSinExtension -replace "\/en", ""
             $Version = ExtraerVersion -urlDescarga $Link -Patron $($Elemento.PatronVersion)
             $Elemento.VersionLTS = $Version
-            $Elemento.EnlaceLTS = "$LinkSinExtension/nginx-$Version.tar.gz"
+            $Elemento.EnlaceLTS = "$LinkSinExtension/nginx-$Version.zip"
 
             #Version DEV
             $Link = ""
@@ -190,7 +207,7 @@ function ActualizarDatos {
             $LinkSinExtension = $LinkSinExtension -replace "\/en", ""
             $Version = ExtraerVersion -urlDescarga $Link -Patron $($Elemento.PatronVersion)
             $Elemento.VersionDEV = $Version
-            $Elemento.EnlaceDEV = "$LinkSinExtension/nginx-$Version.tar.gz"
+            $Elemento.EnlaceDEV = "$LinkSinExtension/nginx-$Version.zip"
 
 1
         }
@@ -296,31 +313,32 @@ function Instalacion {
         mkdir 'C:\Servidor'
     }
 
-    
+    # Proceso para la instalación
+    write-Host "Url: $url"
+    Write-Host "Creación de la ruta del zip"
+    $Salida = "C:\Servidor\$NomZip.zip"
+
+    # Iniciar la instalación
+    if (!(Test-Path $Salida)) {
+        $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+
+        try {
+            Write-Host "Se realiza la petición"
+            Invoke-WebRequest -Uri $url -UserAgent $userAgent -OutFile $Salida -ErrorAction Stop
+            Write-Output "Descarga exitosa."
+        } catch {
+            Write-Output "Error: $_"
+            return  # Salir de la función si hay un error en la descarga
+        }
+    }
+    Expand-Archive -LiteralPath $Salida -DestinationPath "C:\" -Force
+
     
     # Nos dirigimos a la carpeta que contiene el ejecutable
     switch ($opc) {
         # Instalar Apache
         0 {
-            write-Host "Url: $url"
-            Write-Host "Creación de la ruta del zip"
-            $Salida = "C:\Servidor\$NomZip.zip"
-
-            # Iniciar la instalación
-            if (!(Test-Path $Salida)) {
-                $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-
-                try {
-                    Write-Host "Se realiza la petición"
-                    Invoke-WebRequest -Uri $url -UserAgent $userAgent -OutFile $Salida -ErrorAction Stop
-                    Write-Output "Descarga exitosa."
-                } catch {
-                    Write-Output "Error: $_"
-                    return  # Salir de la función si hay un error en la descarga
-                }
-            }
-            Expand-Archive -LiteralPath $Salida -DestinationPath "C:\" -Force
-
+            
             cd C:\Apache24\bin
             try {
                 .\httpd.exe -k install
@@ -334,35 +352,8 @@ function Instalacion {
 
         # Instalar Nginx
         1 {
-            write-Host "Url: $url"
-            Write-Host "Creación de la ruta del zip"
-            $Salida = "C:\Servidor\$NomZip.tar.gz"
-
-            # Iniciar la instalación
-            if (!(Test-Path $Salida)) {
-                $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-
-                try {
-                    Write-Host "Se realiza la petición"
-                    Invoke-WebRequest -Uri $url -UserAgent $userAgent -OutFile $Salida -ErrorAction Stop
-                    Write-Output "Descarga exitosa."
-                } catch {
-                    Write-Output "Error: $_"
-                    return  # Salir de la función si hay un error en la descarga
-                }
-            }
-
-            Write-Host "Descomprimir"
-            # Descomprimimos el archivo ZIP
-            try {
-                tar -xzf $Salida -C "C:\"
-                Write-Output "Extracción exitosa."
-            } catch {
-                Write-Output "Error al extraer el archivo ZIP: $_"
-                return  # Salir de la función si hay un error en la extracción
-            }
-
-            if (Test-Path "C:\nginx-1.27.4") {
+            if (Test-Path "C:\nginx-1.27.4") 
+            {
                 # Cambiar a la carpeta seleccionada
                 cd "C:\nginx-1.27.4"
 
@@ -378,6 +369,23 @@ function Instalacion {
                     Write-Host "Error al iniciar Nginx: $_"
                 }
             }
+            elseif (Test-Path "C:\nginx-1.26.3")
+            {
+                # Cambiar a la carpeta seleccionada
+                cd "C:\nginx-1.26.3"
+
+                # Iniciar Nginx
+                try {
+                    start nginx
+                    Write-Host "Nginx iniciado correctamente."
+                    [System.Diagnostics.Process]::Start("msedge", "http://localhost/")
+                    Start-Sleep -Seconds 10
+                    return
+
+                } catch {
+                    Write-Host "Error al iniciar Nginx: $_"
+                }
+            } 
         }
     }
 }
