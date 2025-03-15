@@ -40,7 +40,7 @@ function ConfigurarIpEstatica {
         New-NetIPAddress -IPAddress $Ip -PrefixLength $PrefijoRed -DefaultGateway $PuertaEnlace -InterfaceIndex 6
         Set-DnsClientServerAddress -InterfaceIndex 6 -ServerAddresses "8.8.8.8"
         Write-Host "Configuración de red aplicada correctamente"
-        Restart-NetAdapter -InterfaceIndex 6
+        Restart-NetAdapter -Name "Ethernet"
 
 
     } else {
