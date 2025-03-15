@@ -15,7 +15,7 @@
     DEV 2.4.69
 #>
 # Funciones necesarias
-Import-Module .\WS.ps1 -Force
+Import-Module .\WS.psm1 -Force
 
 # Variables
 $Servidores =  @()
