@@ -31,9 +31,9 @@ function ConfigurarIpEstatica {
     # Configurar IP en la interfaz de red
     $PrefijoRed = CalcularMascara -Ip $Ip
     if ($PrefijoRed -ne $null) {
-        New-NetIPAddress -IPAddress $Ip -PrefixLength $PrefijoRed -DefaultGateway $PuertaEnlace -InterfaceIndex 6 -ErrorAction SilentlyContinue
-        Set-DnsClientServerAddress -InterfaceIndex 6 -ServerAddresses "8.8.8.8" -ErrorAction SilentlyContinue
-        Restart-NetAdapter -Name "Ethernet" -ErrorAction SilentlyContinue
+        New-NetIPAddress -IPAddress $Ip -PrefixLength $PrefijoRed -DefaultGateway $PuertaEnlace -InterfaceIndex 6 -ErrorAction SilentlyContinue *>$null
+        Set-DnsClientServerAddress -InterfaceIndex 6 -ServerAddresses "8.8.8.8" -ErrorAction SilentlyContinue *>$null
+        Restart-NetAdapter -Name "Ethernet" -ErrorAction SilentlyContinue *>$null
     }
 }
 
