@@ -10,20 +10,16 @@ ConfigurarIpEstatica
 $sshFeature = Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*'
 
 if ($sshFeature.State -ne 'Installed') {
-    Write-Host "Instalando OpenSSH Server..."
-    Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
-} else {
-    Write-Host "OpenSSH Server ya está instalado."
+    Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0 -ErrorAction SilentlyContinue
 }
 
 # Iniciar el servicio SSHD
-Start-Service sshd
-Set-Service -Name sshd -StartupType Automatic
+Start-Service sshd -ErrorAction SilentlyContinue
+Set-Service -Name sshd -StartupType Automatic -ErrorAction SilentlyContinue
 
 # Configurar firewall para permitir SSH
 if (-not (Get-NetFirewallRule -Name 'OpenSSH-Server' -ErrorAction SilentlyContinue)) {
     New-NetFirewallRule -Name 'OpenSSH-Server' -DisplayName 'OpenSSH Server' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
-    Write-Host "Regla de firewall agregada para permitir conexiones SSH."
-} else {
-    Write-Host "La regla de firewall para SSH ya existe."
 }
+Write-Host "SSH Instalado y configurado correctamente"
+

@@ -7,10 +7,7 @@ function ConfigurarIpEstatica {
     while ($true) {
         $Ip = Read-Host "Ingrese la dirección IP"
         if (ValidarIp -Ip $Ip) {
-            Write-Host "Dirección IP capturada correctamente"
             break
-        } else {
-            Write-Host "Error: La dirección IP ingresada no es válida. Intente nuevamente."
         }
     }
 
@@ -18,33 +15,25 @@ function ConfigurarIpEstatica {
     while ($true) {
         $SegRed = ExtraerSegmento -Ip $Ip
         $PuertaEnlace = "$SegRed.1"
-        Write-Host 'Puerta de enlace predeterminada:' $PuertaEnlace
-        $Opc = Read-Host "¿Desea cambiarla? [y/n]"
+        $Opc = Read-Host "¿Desea cambiar la puerta de enlace? [y/n]"
         
         if ($Opc.ToLower() -eq 'y') {
             while ($true) {
                 $PuertaEnlace = Read-Host "Ingrese el nuevo gateway"
                 if (ValidarIp -Ip $PuertaEnlace) {
-                    Write-Host "Gateway capturado correctamente"
                     break
-                } else {
-                    Write-Host "Error: La dirección de gateway no es válida. Intente nuevamente."
                 }
             }
         }
         break
     }
+
     # Configurar IP en la interfaz de red
     $PrefijoRed = CalcularMascara -Ip $Ip
     if ($PrefijoRed -ne $null) {
-        New-NetIPAddress -IPAddress $Ip -PrefixLength $PrefijoRed -DefaultGateway $PuertaEnlace -InterfaceIndex 6
-        Set-DnsClientServerAddress -InterfaceIndex 6 -ServerAddresses "8.8.8.8"
-        Write-Host "Configuración de red aplicada correctamente"
-        Restart-NetAdapter -Name "Ethernet"
-
-
-    } else {
-        Write-Host "Error: No se pudo calcular la máscara de subred. Verifique la IP ingresada."
+        New-NetIPAddress -IPAddress $Ip -PrefixLength $PrefijoRed -DefaultGateway $PuertaEnlace -InterfaceIndex 6 -ErrorAction SilentlyContinue
+        Set-DnsClientServerAddress -InterfaceIndex 6 -ServerAddresses "8.8.8.8" -ErrorAction SilentlyContinue
+        Restart-NetAdapter -Name "Ethernet" -ErrorAction SilentlyContinue
     }
 }
 
@@ -92,7 +81,8 @@ function MenuServidores {
         Write-Host " [0] Apache"
         Write-Host " [1] Nginx"
         Write-Host " [2] ISS"
-        $opc = Read-Host "Selecciona un servidor"
+        Write-Host "Selecciona un servidor:"
+        $opc = Read-Host 
         if(($opc -eq 0) -or ($opc -eq 1) -or ($opc -eq 2) )
         {
             Return $opc
@@ -122,15 +112,27 @@ function MenuDescarga {
             Write-Host " [2] $($ServidorActual.NombreDEV) --Version $($ServidorActual.VersionDEV)"
         }#>
         
-        $X = Read-Host "Seleccione una opción"
+        Write-Host "Seleccione una opción:" 
+        $X = Read-Host 
         Write-Host "Seleccionado: $($ServidorActual.NombreLTS) --Version $($ServidorActual.VersionLTS)"
-        $Port = Read-Host "Elige un puerto para instalar"
-        
-        <#
-            Meter validación para impedir que puedas pedir que se pida la versión DEV con apache
-            Podría ser al momento de verificar que el nombre de la versión exista y después llamar
-            a la instalación
-        #>
+
+        # Solicitar el puerto y validar que no este en uso
+        while ($true)
+        {
+            Write-Host "Elige un puerto para instalar:" 
+            $Puerto = Read-Host 
+            if(!(ProbarPuerto -Puerto $Puerto))
+            {
+                Break
+            }
+            else
+            {
+                Write-Host "El puerto ya esta en uso"
+                Write-Host "Seleccione un puerto valido"
+            }
+            
+        }
+
         if ($X -eq 1)
         {
             Instalacion -url $ServidorActual.EnlaceLTS -NomZip $ServidorActual.NombreLTS -opc $opc
@@ -138,7 +140,7 @@ function MenuDescarga {
         }
         elseif ($X -eq 2)
         {
-            if($($ServidorActual.NombreDEV -ne $null))
+            if($($ServidorActual.NombreDEV -ne "N/A"))
             {
                 Instalacion -url $ServidorActual.EnlaceDEV -NomZip $ServidorActual.NombreDEV -opc $opc
                 break
@@ -146,14 +148,14 @@ function MenuDescarga {
             else 
             {
                 Write-Host "Este servidor no cuenta con versión de Desarollo"
-                Write-Host "Selecciona una opción valida...."
+                Write-Host "Selecciona una versión valida...."
             }
 
         }
         else 
         {
             Write-Host "Seleccione una opción valida"
-            Read-Host "Presione una tecla para volver a intentarlo"
+            Read-Host "Selecciona una opción valida...."
         }
     }
 }
@@ -269,6 +271,19 @@ function EncontrarLink {
     }    
     
 }
+
+function ProbarPuerto {
+    param (
+        [String] $Puerto
+    )
+    $connection = Get-NetTCPConnection -LocalPort $Puerto -ErrorAction SilentlyContinue
+
+    if ($connection) {
+        Write-Output $true  
+    } else {
+        Write-Output $false 
+    }
+}
 function EncontrarLinkDEV {
     param (
         [String] $NomArchivo,
@@ -302,7 +317,8 @@ function Instalacion {
     param (
         [String] $url,
         [String] $NomZip,
-        [int] $opc
+        [int] $opc,
+        [String] $Puerto
     )
 
     # La carpeta Servidor será para almacenar los .zip de los servidores
@@ -329,7 +345,11 @@ function Instalacion {
         }
     }
     Expand-Archive -LiteralPath $Salida -DestinationPath "C:\" -Force
-
+    # Configurar el firewall
+    if (!(Get-NetFirewallRule -Name $NomZip -ErrorAction SilentlyContinue ))
+    {
+        New-NetFirewallRule -Name $NomZip -DisplayName $NomZip -Protocol TCP -LocalPort $Puerto -Action Allow -Direction Inbound
+    }
     
     # Nos dirigimos a la carpeta que contiene el ejecutable
     switch ($opc) {
@@ -340,7 +360,10 @@ function Instalacion {
             try {
                 .\httpd.exe -k install
                 Start-Service -Name Apache2.4
+                (Get-Content "C:\Apache24\bin\httpd.conf") -replace "Listen \d+", "Listen 0.0.0.0:$Puerto" | Set-Content "C:\Apache24\bin\httpd.conf"
                 Write-Host "Instalación completa"
+
+                # Prueba local de que si funciona
                 [System.Diagnostics.Process]::Start("msedge", "http://localhost/")
             } catch {
                 Write-Host "Ocurrió un error en la instalación de Apache: $_"
@@ -356,8 +379,10 @@ function Instalacion {
 
                 # Iniciar Nginx
                 try {
+                    (Get-Content "C:\nginx-1.27.4\conf\nginx.conf") -replace "listen\s+\d+;", "listen 0.0.0.0:$Puerto;" | Set-Content "C:\nginx-1.27.4\conf\nginx.conf"   
                     start nginx
                     Write-Host "Nginx iniciado correctamente."
+                    # Prueba local de que si funciona
                     [System.Diagnostics.Process]::Start("msedge", "http://localhost/")
                     Start-Sleep -Seconds 10
                     return
@@ -373,8 +398,11 @@ function Instalacion {
 
                 # Iniciar Nginx
                 try {
+                    (Get-Content "C:\nginx-1.26.3\conf\nginx.conf") -replace "listen\s+\d+;", "listen 0.0.0.0:$Puerto;" | Set-Content "C:\nginx-1.26.3\conf\nginx.conf"   
                     start nginx
                     Write-Host "Nginx iniciado correctamente."
+
+                    # Prueba local
                     [System.Diagnostics.Process]::Start("msedge", "http://localhost/")
                     Start-Sleep -Seconds 10
                     return
