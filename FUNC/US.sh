@@ -7,13 +7,13 @@
 StaticIpConfig() {
     # Capturar IP
     while true; do
-        read -p "Ingrese la dirección IP: " IpAddress
-        if ValidateIpAddress "$IpAddress"; then
-            echo "Dirección IP capturada correctamente"
-            break
-        else
-            echo "Error: La dirección IP ingresada no es válida. Intente nuevamente."
-        fi
+    read -p "Ingrese la dirección IP: " IpAddress
+    if ValidateIpAddress "$IpAddress"; then
+        echo "Dirección IP capturada correctamente"
+        break
+    else
+        echo "Error: La dirección IP ingresada no es válida. Intente nuevamente."
+    fi
     done
 
     # Capturar Gateway 
@@ -42,18 +42,19 @@ StaticIpConfig() {
     # Configurar IP en la interfaz de red
     NetPrefix=$(CalculateNetMask "$IpAddress")
     if [[ -n "$NetPrefix" ]]; then
-    echo "network:
-        version: 2
-        renderer: networkd
-        ethernets:
-        enp0s3:
-            dhcp4: false
-            addresses:
-            - $IpAddress/$NetPrefix" | sudo tee /etc/netplan/00-installer-config.yaml > /dev/null
-    # Aplicar cambios
-    sudo netplan apply
+        echo "network:
+            version: 2
+            renderer: networkd
+            ethernets:
+            enp0s3:
+                dhcp4: false
+                addresses:
+                - $IpAddress/$NetPrefix
+                gateway4: $GateWay" | sudo tee /etc/netplan/00-installer-config.yaml > /dev/null
+        # Aplicar cambios
+        sudo netplan apply
 
-    echo "Configuración de red aplicada correctamente."
+        echo "Configuración de red aplicada correctamente."
     else
         echo "Error: No se pudo calcular la máscara de subred. Verifique la IP ingresada."
     fi

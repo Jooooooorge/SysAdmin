@@ -43,11 +43,19 @@ $Servidores =@(
         EnlaceDEV = "https://nginx.org/en/download.html"
         PatronDEV = '(nginx\/Windows-\d{1}\.\d{1,}\.\d{1,})'
     } 
+
+    [PSCustomObject]@{
+        NombreLTS = "IIS"
+        NombreDEV = "N/A"
+        VersionLTS = ""
+        EnlaceLTS = "https://nginx.org/en/download.html"
+        PatronLTS = '(nginx\/Windows-\d{1}\.\d{1,}\.\d{1,})'
+    } 
 )
 
 # Instalación de las dependencias de c++
 
-if (Test-Path "HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" ) {
+<#if (Test-Path "HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" ) {
 } else {
     Write-Output "Instalando Microsoft Visual C++ Redistributable..."
     Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "$env:TEMP\vc_redist.x64.exe"
@@ -59,5 +67,6 @@ while ($true)
     $opc = MenuServidores
     MenuDescarga -opc $opc -Servidores $Servidores
 
-}
+}#>
 
+InstalarIIS -Puerto 85

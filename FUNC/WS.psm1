@@ -133,6 +133,11 @@ function MenuDescarga {
 
         if ($X -eq 1)
         {
+            if ($opc -eq 2)
+            {
+                InstalarIIS -Puerto $Puerto
+                return
+            }
             Write-Host "Seleccionado: $($ServidorActual.NombreLTS) --Version $($ServidorActual.VersionLTS)"
             Instalacion -url $ServidorActual.EnlaceLTS -NomZip $ServidorActual.NombreLTS -opc $opc -Puerto $Puerto
             break
@@ -207,10 +212,60 @@ function ActualizarDatos {
             $Version = ExtraerVersion -urlDescarga $Link -Patron $($Elemento.PatronVersion)
             $Elemento.VersionDEV = $Version
             $Elemento.EnlaceDEV = "$LinkSinExtension/nginx-$Version.zip"
-
-1
+            if ($opc -eq 2)
+            {
+                
+            } 
         }
         $opc++
+    }
+}
+
+function InstalarIIS {
+    param(
+        [int]$Puerto
+    )
+
+    Write-Host "Iniciando la instalación de IIS..."
+
+    # Verificar si el servicio W3SVC (IIS) ya está instalado
+    if (-not (Get-Service -Name W3SVC -ErrorAction SilentlyContinue)) {
+        Write-Host "IIS no está instalado. Procediendo con la instalación..."
+
+        try {
+            # Instalar el rol de servidor web (IIS) con todas las subcaracterísticas y herramientas de gestión
+            Write-Host "Instalando el rol de servidor web (IIS)..."
+            Install-WindowsFeature -Name Web-Server -IncludeManagementTools -IncludeAllSubFeature -Confirm:$false
+
+            # Verificar si la instalación fue exitosa
+            if ((Get-WindowsFeature -Name Web-Server).Installed) {
+                Write-Host "IIS instalado correctamente."
+
+                # Iniciar el servicio W3SVC
+                Write-Host "Iniciando el servicio W3SVC..."
+                Start-Service -Name W3SVC -ErrorAction Stop
+
+                # Cambiar el puerto del sitio web predeterminado
+                Write-Host "Configurando el puerto $Puerto..."
+                Set-WebBinding -Name "Default Web Site" -BindingInformation "*:80:" -PropertyName Port -Value $Puerto -ErrorAction Stop
+
+                # Reiniciar el servicio para aplicar los cambios
+                Write-Host "Reiniciando el servicio W3SVC..."
+                Restart-Service -Name W3SVC -ErrorAction Stop
+
+                # Abrir el puerto en el firewall
+                Write-Host "Abriendo el puerto $Puerto en el firewall..."
+                New-NetFirewallRule -Name "IIS_Port_$Puerto" -DisplayName "IIS (Puerto $Puerto)" -Protocol TCP -LocalPort $Puerto -Action Allow -Direction Inbound -ErrorAction Stop
+
+                Write-Host "Instalación y configuración de IIS completada exitosamente."
+            } else {
+                Write-Host "Error: No se pudo instalar IIS." -ForegroundColor Red
+            }
+        } catch {
+            Write-Host "Error durante la instalación o configuración de IIS: $_" -ForegroundColor Red
+        }
+    } else {
+        Write-Host "IIS ya está instalado y configurado." -ForegroundColor Green
     }
 }
 
