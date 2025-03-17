@@ -6,10 +6,11 @@
 source ./US.sh
 
 # Asegurarnos de que el sistema esta actualizado
-sudo apt update
-sudo apt install -y net-tools
-sudo apt install openssh-server -y
+sudo apt update -qq
+sudo apt install -y net-tools -qq
+sudo apt install openssh-server -y -qq
 
+# Configurar la ip estatica
 StaticIpConfig
 
 
@@ -20,5 +21,5 @@ sudo systemctl enable ssh
 sudo ufw allow ssh
 
 # Inciamos el servidor
-sudo systemctl start ssh
+sudo systemctl start ssh 
 
