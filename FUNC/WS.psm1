@@ -134,7 +134,7 @@ function MenuDescarga {
         if ($X -eq 1)
         {
             Write-Host "Seleccionado: $($ServidorActual.NombreLTS) --Version $($ServidorActual.VersionLTS)"
-            Instalacion -url $ServidorActual.EnlaceLTS -NomZip $ServidorActual.NombreLTS -opc $opc
+            Instalacion -url $ServidorActual.EnlaceLTS -NomZip $ServidorActual.NombreLTS -opc $opc -Puerto $Puerto
             break
         }
         elseif ($X -eq 2)
@@ -142,7 +142,7 @@ function MenuDescarga {
             if($($ServidorActual.NombreDEV -ne "N/A"))
             {
                 Write-Host "Seleccionado: $($ServidorActual.NombreDEV) --Version $($ServidorActual.VersionDEV)"
-                Instalacion -url $ServidorActual.EnlaceDEV -NomZip $ServidorActual.NombreDEV -opc $opc
+                Instalacion -url $ServidorActual.EnlaceDEV -NomZip $ServidorActual.NombreDEV -opc $opc -Puerto $Puerto
                 break
             }
             else 
@@ -310,47 +310,34 @@ function Instalacion {
     )
 
     # La carpeta Servidor será para almacenar los .zip de los servidores
-    if (!(Test-Path 'C:\Servidor')) {
-        mkdir 'C:\Servidor'
+    if (!(Test-Path 'C:\Servidor' -ErrorAction SilentlyContinue)) {
+        mkdir 'C:\Servidor' 
     }
 
     # Proceso para la instalación
     $Salida = "C:\Servidor\$NomZip.zip"
-    Write-Host "Salida: $Salida"
-    Write-Host "URL: $url"
+    # DEBUG Write-Host "Salida: $Salida"
+    # DEBUG Write-Host "URL: $url
+
     # Iniciar la instalación
+    # Comprobar que el .zip no este instalado
     if (!(Test-Path $Salida)) {
         $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 
         try {
-            Write-Host "Se realiza la petición"
+            # DEBUG Write-Host "Se realiza la petición"
             Invoke-WebRequest -Uri $url -UserAgent $userAgent -OutFile $Salida -ErrorAction Stop 
             Write-Output "Descarga exitosa."
+            Write-Host "Extrayendo archivo"
+            Expand-Archive -LiteralPath $Salida -DestinationPath "C:\" -Force
         } catch {
             Write-Output "Error: $_"
             return  # Salir de la función si hay un error en la descarga
         }
     }
-    Write-Host "Iniciando Extracción"
-    Write-Host "Verificando archivo ZIP..."
-    if (!(Test-Path $Salida)) {
-        Write-Host "Error: El archivo ZIP no existe en $Salida"
-        return
-    }
-
-    # Verificar tamaño del archivo ZIP (si es menor a 1 KB, probablemente está corrupto)
-    $FileSize = (Get-Item $Salida).Length
-    if ($FileSize -lt 1024) {
-        Write-Host "Error: Archivo ZIP corrupto o incompleto ($FileSize bytes)"
-        Remove-Item $Salida -Force
-        return
-    }
-
-    Write-Host "Archivo ZIP verificado con éxito."
-    Expand-Archive -LiteralPath $Salida -DestinationPath "C:\" -Force
     # Configurar el firewall
 
-    Write-Host "Creando nueva regla firewall"
+    # DEBUG Write-Host "Creando nueva regla firewall"
     if (!(Get-NetFirewallRule -Name $NomZip -ErrorAction SilentlyContinue *>$null ))
     {
         New-NetFirewallRule -Name $NomZip -DisplayName $NomZip -Protocol TCP -LocalPort $Puerto -Action Allow -Direction Inbound -ErrorAction SilentlyContinue *>$null
@@ -360,17 +347,30 @@ function Instalacion {
     switch ($opc) {
         # Instalar Apache
         0 {
-            Write-Host "Instalando Apache"
+            Write-Host "Configurando Apache..."
             cd C:\Apache24\conf
-            try {
-                (Get-Content "C:\Apache24\conf\httpd.conf") -replace "Listen \d+", "Listen 0.0.0.0:$Puerto" | Set-Content "C:\Apache24\bin\httpd.conf"
-                cd C:\Apache24\bin
-                .\httpd.exe -k install
-                Start-Service -Name Apache2.4
-                Write-Host "Instalación completa"
-
-            } catch {
-                Write-Host "Ocurrió un error en la instalación de Apache: $_"
+            if(!(Get-Service -Name Apache2.4 -ErrorAction SilentlyContinue))
+            {
+                try {
+                    (Get-Content "C:\Apache24\conf\httpd.conf") -replace "Listen \d+", "Listen 0.0.0.0:$Puerto" | Set-Content "C:\Apache24\conf\httpd.conf"
+                    cd C:\Apache24\bin
+                    .\httpd.exe -k install
+                    Start-Service -Name Apache2.4
+                    Start-Sleep -Seconds 5
+                    Write-Host "Instalación completa"
+                    if(Get-Service -Name Apache2.4 -ErrorAction SilentlyContinue)
+                        {
+                            Write-Host "Apache iniciado correctamente."
+                            return
+                        }
+    
+                } catch {
+                    Write-Host "Ocurrió un error en la instalación de Apache: $_"
+                }
+            }
+            else
+            {
+                Write-Host "Apache ya esta instalado y configurado"    
             }
         }
 
@@ -380,44 +380,60 @@ function Instalacion {
             {
                 # Cambiar a la carpeta seleccionada
                 cd "C:\nginx-1.27.4"
-
-                # Iniciar Nginx
-                try {
-                    (Get-Content "C:\nginx-1.27.4\conf\nginx.conf") -replace "listen\s+\d+;", "listen 0.0.0.0:$Puerto;" | Set-Content "C:\nginx-1.27.4\conf\nginx.conf"   
-                    Start-Process -FilePath "C:\nginx-1.27.4\nginx.exe" -NoNewWindow
-                    if(Get-Process -Name nginx -ErrorAction SilentlyContinue)
-                    {
-                        Write-Host "Nginx iniciado correctamente."
+                if(!(Get-Process -Name nginx -ErrorAction SilentlyContinue))
+                {
+                    try {
+                        (Get-Content "C:\nginx-1.27.4\conf\nginx.conf") -replace "listen\s+\d+;", "listen 0.0.0.0:$Puerto;" | Set-Content "C:\nginx-1.27.4\conf\nginx.conf"   
+                        Start-Process -FilePath "C:\nginx-1.27.4\nginx.exe" -NoNewWindow
+                        Start-Sleep -Seconds 5
+                        if(Get-Process -Name nginx -ErrorAction SilentlyContinue)
+                        {
+                            Write-Host "Nginx iniciado correctamente."
+                            return
+                        }
+                        Write-Host "Nginx no se ha inciado."
                         return
-                    }
-                    Write-Host "Nginx no se ha inciado."
-                    return
 
-                } catch {
-                    Write-Host "Error al iniciar Nginx: $_"
+                    } catch {
+                        Write-Host "Error al iniciar Nginx: $_"
+                    }
                 }
+                else 
+                {
+                    Write-Host "Nginx ya esta instalado y configurado"
+                    return
+                }
+                # Iniciar Nginx
+                
             }
             # LTS Version
             elseif (Test-Path "C:\nginx-1.26.3")
             {
                 # Cambiar a la carpeta seleccionada
                 cd "C:\nginx-1.26.3"
-
-                # Iniciar Nginx
-                try {
-                    (Get-Content "C:\nginx-1.26.3\conf\nginx.conf") -replace "listen\s+\d+;", "listen 0.0.0.0:$Puerto;" | Set-Content "C:\nginx-1.26.3\conf\nginx.conf"   
-                    Start-Process -FilePath "C:\nginx-1.26.3\nginx.exe" -NoNewWindow
-                    if(Get-Process -Name nginx -ErrorAction SilentlyContinue)
-                    {
-                        Write-Host "Nginx iniciado correctamente."
+                if(!(Get-Process -Name nginx -ErrorAction SilentlyContinue))
+                {
+                    try {
+                        (Get-Content "C:\nginx-1.26.3\conf\nginx.conf") -replace "listen\s+\d+;", "listen 0.0.0.0:$Puerto;" | Set-Content "C:\nginx-1.26.3\conf\nginx.conf"   
+                        Start-Process -FilePath "C:\nginx-1.26.3\nginx.exe" -NoNewWindow
+                        Start-Sleep -Seconds 5
+    
+                        if(Get-Process -Name nginx -ErrorAction SilentlyContinue)
+                        {
+                            Write-Host "Nginx iniciado correctamente."
+                            return
+                        }
+                        Write-Host "Nginx no se ha inciado."
                         return
+    
+                    } catch {
+                        Write-Host "Error al iniciar Nginx: $_"
                     }
-                    Write-Host "Nginx no se ha inciado."
+                } else 
+                {
+                    Write-Host "Nginx ya esta instalado y configurado"
                     return
-
-                } catch {
-                    Write-Host "Error al iniciar Nginx: $_"
-                }
+                }                
             } 
         }
     }
