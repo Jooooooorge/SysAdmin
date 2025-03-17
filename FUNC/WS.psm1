@@ -114,7 +114,6 @@ function MenuDescarga {
         
         Write-Host "Seleccione una opción:" 
         $X = Read-Host 
-        Write-Host "Seleccionado: $($ServidorActual.NombreLTS) --Version $($ServidorActual.VersionLTS)"
 
         # Solicitar el puerto y validar que no este en uso
         while ($true)
@@ -127,14 +126,14 @@ function MenuDescarga {
             }
             else
             {
-                Write-Host "El puerto ya esta en uso"
-                Write-Host "Seleccione un puerto valido"
+                Write-Host "ERROR: Seleccione un puerto valido"
             }
             
         }
 
         if ($X -eq 1)
         {
+            Write-Host "Seleccionado: $($ServidorActual.NombreLTS) --Version $($ServidorActual.VersionLTS)"
             Instalacion -url $ServidorActual.EnlaceLTS -NomZip $ServidorActual.NombreLTS -opc $opc
             break
         }
@@ -142,6 +141,7 @@ function MenuDescarga {
         {
             if($($ServidorActual.NombreDEV -ne "N/A"))
             {
+                Write-Host "Seleccionado: $($ServidorActual.NombreDEV) --Version $($ServidorActual.VersionDEV)"
                 Instalacion -url $ServidorActual.EnlaceDEV -NomZip $ServidorActual.NombreDEV -opc $opc
                 break
             }
@@ -210,17 +210,6 @@ function ActualizarDatos {
 
 1
         }
-        <#elseif ($opc -eq 2) 
-        {
-            DescargarHTML -url $($Elemento.EnlaceLTS)
-            $Link = EncontrarLink -NomArchivo "html.txt" -PatronRegex $($Elemento.PatronLTS)
-            $Link = "$($Elemento.EnlaceLTS)$Link.zip"
-            $Elemento.EnlaceLTS = $Link
-
-            $Version = ExtraerVersion -urlDescarga $($Elemento.EnlaceLTS) -Patron $($Elemento.PatronVersion)
-            $Elemento.VersionLTS = $Version
-        }#>
-        
         $opc++
     }
 }
@@ -241,7 +230,6 @@ function DescargarHTML {
         # Descargar el contenido de la página
         $response = Invoke-WebRequest -Uri $url -UserAgent $userAgent -Headers $headers -UseBasicParsing -ErrorAction Stop
         $response.Content > $Archivo
-        Write-Output "HTML descargado correctamente en $Archivo."
     } catch {
         Write-Output "Error al descargar el HTML: $_"
     }
@@ -257,7 +245,7 @@ function EncontrarLink {
     # Nos aseguramos que la variable automatica este limpia
     $Matches = $null # Devuelve las cadenas que coincide con el patrón
     try {
-        $Archivo = Get-Content ".\$NomArchivo" -ErrorAction Stop
+        $Archivo = Get-Content ".\$NomArchivo" -ErrorAction Stop 
         foreach ($Line in $Archivo) {
             if ($Line -match $PatronRegex) {
                 return $Matches[0]
@@ -274,15 +262,15 @@ function EncontrarLink {
 
 function ProbarPuerto {
     param (
-        [String] $Puerto
+        [INT] $Puerto
     )
-    $connection = Get-NetTCPConnection -LocalPort $Puerto -ErrorAction SilentlyContinue
+    $connection = Get-NetTCPConnection -LocalPort $Puerto -ErrorAction SilentlyContinue 
 
     if ($connection) {
-        Write-Output $true  
+        Return $true  # Puerto denegado
     } else {
-        Write-Output $false 
-    }
+        Return $false  # Puerto aceptado
+    }    
 }
 function EncontrarLinkDEV {
     param (
@@ -318,7 +306,7 @@ function Instalacion {
         [String] $url,
         [String] $NomZip,
         [int] $opc,
-        [String] $Puerto
+        [INT] $Puerto
     )
 
     # La carpeta Servidor será para almacenar los .zip de los servidores
@@ -327,35 +315,37 @@ function Instalacion {
     }
 
     # Proceso para la instalación
-    write-Host "Url: $url"
-    Write-Host "Creación de la ruta del zip"
     $Salida = "C:\Servidor\$NomZip.zip"
-
+    Write-Host "Salida: $Salida"
+    Write-Host "URL: $url"
     # Iniciar la instalación
     if (!(Test-Path $Salida)) {
         $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 
         try {
             Write-Host "Se realiza la petición"
-            Invoke-WebRequest -Uri $url -UserAgent $userAgent -OutFile $Salida -ErrorAction Stop
+            Invoke-WebRequest -Uri $url -UserAgent $userAgent -OutFile $Salida -ErrorAction Stop 
             Write-Output "Descarga exitosa."
         } catch {
             Write-Output "Error: $_"
             return  # Salir de la función si hay un error en la descarga
         }
     }
+    Write-Host "Iniciando Extracción"
     Expand-Archive -LiteralPath $Salida -DestinationPath "C:\" -Force
     # Configurar el firewall
-    if (!(Get-NetFirewallRule -Name $NomZip -ErrorAction SilentlyContinue ))
+
+    Write-Host "Creando nueva regla firewall"
+    if (!(Get-NetFirewallRule -Name $NomZip -ErrorAction SilentlyContinue *>$null ))
     {
-        New-NetFirewallRule -Name $NomZip -DisplayName $NomZip -Protocol TCP -LocalPort $Puerto -Action Allow -Direction Inbound
+        New-NetFirewallRule -Name $NomZip -DisplayName $NomZip -Protocol TCP -LocalPort $Puerto -Action Allow -Direction Inbound -ErrorAction SilentlyContinue *>$null
     }
     
     # Nos dirigimos a la carpeta que contiene el ejecutable
     switch ($opc) {
         # Instalar Apache
         0 {
-            
+            Write-Host "Instalando Apache"
             cd C:\Apache24\bin
             try {
                 .\httpd.exe -k install
@@ -380,17 +370,20 @@ function Instalacion {
                 # Iniciar Nginx
                 try {
                     (Get-Content "C:\nginx-1.27.4\conf\nginx.conf") -replace "listen\s+\d+;", "listen 0.0.0.0:$Puerto;" | Set-Content "C:\nginx-1.27.4\conf\nginx.conf"   
-                    start nginx
-                    Write-Host "Nginx iniciado correctamente."
-                    # Prueba local de que si funciona
-                    [System.Diagnostics.Process]::Start("msedge", "http://localhost/")
-                    Start-Sleep -Seconds 10
+                    Start-Process -FilePath "C:\nginx-1.27.4\nginx.exe" -NoNewWindow
+                    if(Get-Process -Name nginx -ErrorAction SilentlyContinue)
+                    {
+                        Write-Host "Nginx iniciado correctamente."
+                        return
+                    }
+                    Write-Host "Nginx no se ha inciado."
                     return
 
                 } catch {
                     Write-Host "Error al iniciar Nginx: $_"
                 }
             }
+            # LTS Version
             elseif (Test-Path "C:\nginx-1.26.3")
             {
                 # Cambiar a la carpeta seleccionada
@@ -399,12 +392,13 @@ function Instalacion {
                 # Iniciar Nginx
                 try {
                     (Get-Content "C:\nginx-1.26.3\conf\nginx.conf") -replace "listen\s+\d+;", "listen 0.0.0.0:$Puerto;" | Set-Content "C:\nginx-1.26.3\conf\nginx.conf"   
-                    start nginx
-                    Write-Host "Nginx iniciado correctamente."
-
-                    # Prueba local
-                    [System.Diagnostics.Process]::Start("msedge", "http://localhost/")
-                    Start-Sleep -Seconds 10
+                    Start-Process -FilePath "C:\nginx-1.26.3\nginx.exe" -NoNewWindow
+                    if(Get-Process -Name nginx -ErrorAction SilentlyContinue)
+                    {
+                        Write-Host "Nginx iniciado correctamente."
+                        return
+                    }
+                    Write-Host "Nginx no se ha inciado."
                     return
 
                 } catch {

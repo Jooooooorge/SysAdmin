@@ -54,7 +54,12 @@ if (Test-Path "HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" ) {
     Start-Process -FilePath "$env:TEMP\vc_redist.x64.exe" -ArgumentList "/install /quiet /norestart" -Wait
 } 
 ActualizarDatos -Array $Servidores 
-$opc = MenuServidores
-MenuDescarga -opc $opc -Servidores $Servidores
+# $opc = MenuServidores
+# MenuDescarga -opc $opc -Servidores $Servidores
+
+$ServidorActual = $Servidores[0]
+# Instalar apache
+Instalacion -url $($ServidorActual.EnlaceLTS) -NomZip $($ServidorActual.NombreLTS) -opc 0 -Puerto 80
+
 
 
