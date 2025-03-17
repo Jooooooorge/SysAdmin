@@ -332,6 +332,21 @@ function Instalacion {
         }
     }
     Write-Host "Iniciando Extracción"
+    Write-Host "Verificando archivo ZIP..."
+    if (!(Test-Path $Salida)) {
+        Write-Host "Error: El archivo ZIP no existe en $Salida"
+        return
+    }
+
+    # Verificar tamaño del archivo ZIP (si es menor a 1 KB, probablemente está corrupto)
+    $FileSize = (Get-Item $Salida).Length
+    if ($FileSize -lt 1024) {
+        Write-Host "Error: Archivo ZIP corrupto o incompleto ($FileSize bytes)"
+        Remove-Item $Salida -Force
+        return
+    }
+
+    Write-Host "Archivo ZIP verificado con éxito."
     Expand-Archive -LiteralPath $Salida -DestinationPath "C:\" -Force
     # Configurar el firewall
 
@@ -346,15 +361,14 @@ function Instalacion {
         # Instalar Apache
         0 {
             Write-Host "Instalando Apache"
-            cd C:\Apache24\bin
+            cd C:\Apache24\conf
             try {
+                (Get-Content "C:\Apache24\conf\httpd.conf") -replace "Listen \d+", "Listen 0.0.0.0:$Puerto" | Set-Content "C:\Apache24\bin\httpd.conf"
+                cd C:\Apache24\bin
                 .\httpd.exe -k install
                 Start-Service -Name Apache2.4
-                (Get-Content "C:\Apache24\bin\httpd.conf") -replace "Listen \d+", "Listen 0.0.0.0:$Puerto" | Set-Content "C:\Apache24\bin\httpd.conf"
                 Write-Host "Instalación completa"
 
-                # Prueba local de que si funciona
-                [System.Diagnostics.Process]::Start("msedge", "http://localhost/")
             } catch {
                 Write-Host "Ocurrió un error en la instalación de Apache: $_"
             }
