@@ -38,7 +38,7 @@ StaticIpConfig() {
 
     echo "Máscara de subred configurada automáticamente..."
     echo "Servidor DNS asignado automáticamente..."
-
+    sudo chmod 600 /etc/netplan/00-installer-config.yaml.
     # Configurar IP en la interfaz de red
     NetPrefix=$(CalculateNetMask "$IpAddress")
     if [[ -n "$NetPrefix" ]]; then
@@ -46,11 +46,15 @@ StaticIpConfig() {
             version: 2
             renderer: networkd
             ethernets:
-            enp0s3:
-                dhcp4: false
-                addresses:
-                - $IpAddress/$NetPrefix
-                gateway4: $GateWay" | sudo tee /etc/netplan/00-installer-config.yaml > /dev/null
+                enp0s3:
+                    dhcp4: no
+                    addresses:
+                        - $IpAddress/$NetPrefix
+                    gateway4: $GateWay
+                    nameservers:
+                        addresses:
+                            - 8.8.8.8
+                            - 8.8.4.4" | sudo tee /etc/netplan/00-installer-config.yaml > /dev/null
         # Aplicar cambios
         sudo netplan apply
 
