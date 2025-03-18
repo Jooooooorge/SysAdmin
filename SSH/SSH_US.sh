@@ -6,9 +6,9 @@
 source ./US.sh
 
 # Asegurarnos de que el sistema esta actualizado
-sudo apt update -qq
-sudo apt install -y net-tools -qq
-sudo apt install openssh-server -y -qq
+sudo apt update -qq 
+sudo apt install -qq -y net-tools
+sudo apt install -qq openssh-server -y 
 
 # Configurar la ip estatica
 StaticIpConfig

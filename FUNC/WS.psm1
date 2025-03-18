@@ -81,6 +81,7 @@ function MenuServidores {
         Write-Host " [0] Apache"
         Write-Host " [1] Nginx"
         Write-Host " [2] ISS"
+        Write-Host " [3] Salir"
         Write-Host "Selecciona un servidor:"
         $opc = Read-Host 
         if(($opc -eq 0) -or ($opc -eq 1) -or ($opc -eq 2) )
@@ -227,16 +228,10 @@ function InstalarIIS {
     )
 
     Write-Host "Iniciando la instalación de IIS..."
-
-    # Verificar si el servicio W3SVC (IIS) ya está instalado
-    if (-not (Get-Service -Name W3SVC -ErrorAction SilentlyContinue)) {
-        Write-Host "IIS no está instalado. Procediendo con la instalación..."
-
         try {
             # Instalar el rol de servidor web (IIS) con todas las subcaracterísticas y herramientas de gestión
             Write-Host "Instalando el rol de servidor web (IIS)..."
-            Install-WindowsFeature -Name Web-Server -IncludeManagementTools -IncludeAllSubFeature -Confirm:$false
-
+            # Install-WindowsFeature -Name Web-Server -IncludeManagementTools -Source "D:\sources\sxs"
             # Verificar si la instalación fue exitosa
             if ((Get-WindowsFeature -Name Web-Server).Installed) {
                 Write-Host "IIS instalado correctamente."
@@ -264,9 +259,6 @@ function InstalarIIS {
         } catch {
             Write-Host "Error durante la instalación o configuración de IIS: $_" -ForegroundColor Red
         }
-    } else {
-        Write-Host "IIS ya está instalado y configurado." -ForegroundColor Green
-    }
 }
 
 function DescargarHTML {

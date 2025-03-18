@@ -55,18 +55,23 @@ $Servidores =@(
 
 # Instalación de las dependencias de c++
 
-<#if (Test-Path "HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" ) {
+if (Test-Path "HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" ) {
 } else {
     Write-Output "Instalando Microsoft Visual C++ Redistributable..."
     Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "$env:TEMP\vc_redist.x64.exe"
     Start-Process -FilePath "$env:TEMP\vc_redist.x64.exe" -ArgumentList "/install /quiet /norestart" -Wait
 } 
+
+Write-Host "Actualizando Datos"
 ActualizarDatos -Array $Servidores 
 while ($true)
 {
     $opc = MenuServidores
+    if($opc -eq 3 )
+    {
+        return
+    }
     MenuDescarga -opc $opc -Servidores $Servidores
 
-}#>
+}
 
-InstalarIIS -Puerto 85

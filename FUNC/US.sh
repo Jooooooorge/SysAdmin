@@ -101,3 +101,76 @@ ValidateDomain() {
     local Pattern='^(([a-z]{2,})+\.)+([a-z]{2,})+$'
     [[ "$Domain" =~ $Pattern ]]
 }
+
+# ====== ====== ====== ====== ====== ======
+
+function MostrarVersiones {
+    echo "========= ========= ========="
+    echo " SELECCIONA UN SERVIDOR WEB"
+    echo " [0] Apache"
+    echo " [1] Nginx"
+    echo " [2] Caddy"
+    read -p "Selecciona un servidor: " opc
+
+    case $opc in
+        0)
+            server="apache2"
+            echo "===== APACHE ======"
+            apt list -a apache2 2>/dev/null | awk -F' ' '{if (NR>1) print $2}'
+            ;;
+        1)
+            server="nginx"
+            echo "===== NGINX ======"
+            apt list -a nginx 2>/dev/null | awk -F' ' '{if (NR>1) print $2}'
+            ;;
+        2)
+            server="caddy"
+            echo "===== CADDY ======"
+            curl -s https://api.github.com/repos/caddyserver/caddy/releases | grep '"tag_name":' | awk -F'"' '{print $4}' | head -5
+            ;;
+        *)
+            echo "Opción no válida."
+            return 1
+            ;;
+    esac
+
+    read -p "Selecciona una versión específica: " version
+    echo "$server:$version"
+}
+
+function InstalarServidor {
+    seleccion=$(MostrarVersiones)
+    if [[ -z "$seleccion" ]]; then
+        echo "Error: No se seleccionó un servidor válido."
+        return 1
+    fi
+
+    IFS=":" read -r servidor version <<< "$seleccion"
+
+    echo "Instalando $servidor versión $version..."
+
+    case $servidor in
+        apache2)
+            sudo apt update
+            sudo apt install -y apache2="$version"
+            ;;
+        nginx)
+            sudo apt update
+            sudo apt install -y nginx="$version"
+            ;;
+        caddy)
+            sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+            curl -1sLf "https://dl.cloudsmith.io/public/caddy/stable/gpg.key" | sudo tee /etc/apt/trusted.gpg.d/caddy.asc
+            curl -1sLf "https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt" | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+            sudo apt update
+            sudo apt install -y caddy
+            ;;
+        *)
+            echo "Error: Servidor no reconocido."
+            return 1
+            ;;
+    esac
+
+    echo "$servidor versión $version instalado correctamente."
+}
+
