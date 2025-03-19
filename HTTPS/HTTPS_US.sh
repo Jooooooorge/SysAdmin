@@ -74,7 +74,7 @@ case "$opc" in
         
         # Paso 3: Descargar el archivo comprimido
         echo "Descargando Apache... link $apache_link -- $version_link"
-        wget -O apache.tar.gz "$apache_link" > /dev/null 2>&1
+        wget -q apache.tar.gz "$apache_link" > /dev/null 2>&1
 
         # Paso 4: Descomprimir el archivo
         echo "Descomprimiendo Apache..."
@@ -102,9 +102,11 @@ case "$opc" in
         done
 
         # Paso 7: Modificar la configuración de Apache
-        sudo sed -i "s/Listen 80/Listen $port/" /usr/local/apache2/conf/httpd.conf 
-        echo "ServerName localhost" | sudo tee -a /usr/local/apache2/conf/httpd.conf 
-
+        # sudo sed -i "s/Listen 80/Listen $port/" /usr/local/apache2/conf/httpd.conf 
+        # echo "ServerName localhost" | sudo tee -a /usr/local/apache2/conf/httpd.conf 
+        
+        sudo sed -i "s/^Listen [0-9]\+/Listen $port/" /etc/apache2/ports.conf
+        sudo sed -i "s/<VirtualHost \*:80>/<VirtualHost *:$port>/g" /etc/apache2/sites-available/000-default.conf
         # Paso 8: Reiniciar Apache
         echo "Reiniciando Apache..."
         sudo /usr/local/apache2/bin/apachectl restart
