@@ -18,8 +18,8 @@
 echo "Instalando dependencias...."
 sudo apt update -qq > /dev/null 2>&1
 sudo apt install -qq curl wget grep sed  > /dev/null 2>&1
-sudo apt install -qq -y build-essential libapr1-dev libaprutil1-dev libpcre3-dev  > /dev/null 2>&1
-
+sudo apt install -y build-essential libpcre3 libpcre3-dev zlib1g zlib1g-dev libssl-dev > /dev/null 2>&1
+sudo apt install -y libapr1-dev libaprutil1-dev > /dev/null 2>&1
 # Mostrar el menú
 echo "========= ========= ========="
 echo " SELECCIONA UN SERVIDOR WEB"
@@ -46,7 +46,7 @@ echo "Opción seleccionada: $opc"
 # Continuar con la lógica según la opción seleccionada
 case "$opc" in
     0)
-        # Comprobar si la herramienta bzip esta isntalada
+         # Comprobar si la herramienta bzip esta isntalada
         if ! command -v bzip2 &> /dev/null; then
             echo "bzip2 no está instalado. Instalando bzip2..."
             sudo apt install -qq -y bzip2 > /dev/null 2>&1
@@ -69,37 +69,22 @@ case "$opc" in
 
         # Paso 2: Extraer el enlace de descarga usando tu regex
         echo "Extrayendo enlace de descarga de Apache..."
-        apache_link=$(grep -oP '(https:\/\/dlcdn\.apache\.org\/httpd\/httpd-\d{1}\.\d{1}\.\d{1,}\.tar\.bz2)' apache.html | head -n 1)
-
+        apache_link=$(grep -oP '(https:\/\/dlcdn\.apache\.org\/httpd\/httpd-\d{1}\.\d{1}\.\d{1,}\.tar\.gz)' apache.html | head -n 1)
+        version_link=$(echo "$apache_link" | grep -oP '\d{1}\.\d{1,}\.\d{1,}' | head -n 1)
+        
         # Paso 3: Descargar el archivo comprimido
-        echo "Descargando Apache..."
-        wget -O apache.tar.bz2 "$apache_link" > /dev/null 2>&1
-
-        if [ $? -eq 0 ]; then
-            echo "Apache descargado correctamente."
-        else
-            echo "Error al descargar Apache."
-            exit 1
-        fi
+        echo "Descargando Apache... link $apache_link -- $version_link"
+        wget -O apache.tar.gz "$apache_link" > /dev/null 2>&1
 
         # Paso 4: Descomprimir el archivo
         echo "Descomprimiendo Apache..."
-        tar -xjf apache.tar.bz2 > /dev/null 2>&1
-
-        if [ $? -eq 0 ]; then
-            echo "Apache descomprimido correctamente."
-        else
-            echo "Error al descomprimir Apache."
-            exit 1
-        fi
-        # Habilitar Firewall
-        sudo ufw allow 'Apache'
+        tar -xzvf apache.tar.gz > /dev/null 2>&1
 
         # Paso 5: Instalar Apache
-        echo "Instalando Apacheee"
-        apache_dir=$(tar -tf apache.tar.bz2 | head -n 1 | cut -f1 -d"/") > /dev/null 2>&1
-        cd "$apache_dir" || { echo "Error al cambiar al directorio de Apache."; exit 1; }
-        echo "./configure..."
+        echo "Instalando Apache... "
+        cd "httpd-2.4.63" || { echo "Error al cambiar al directorio de Apache."; exit 1; }
+
+        # Compilando código
         ./configure > /dev/null 2>&1
         make > /dev/null 2>&1
         sudo make install > /dev/null 2>&1
@@ -116,83 +101,35 @@ case "$opc" in
             fi
         done
 
-        echo "Configurando Apache para escuchar en el puerto $port..."
-
         # Paso 7: Modificar la configuración de Apache
-        apache_conf="/usr/local/apache2/conf/httpd.conf"
-
-        if [ -f "$apache_conf" ]; then
-            # Cambiar el puerto en la configuración
-            sudo sed -i "s/^Listen [0-9]\+/Listen $port/" "$apache_conf"
-
-            if [ $? -eq 0 ]; then
-                echo "Puerto configurado correctamente en $apache_conf."
-            else
-                echo "Error al modificar el archivo de configuración."
-                exit 1
-            fi
-        else
-            echo "No se encontró el archivo de configuración de Apache en $apache_conf."
-            exit 1
-        fi
+        sudo sed -i "s/Listen 80/Listen $port/" /usr/local/apache2/conf/httpd.conf 
+        echo "ServerName localhost" | sudo tee -a /usr/local/apache2/conf/httpd.conf 
 
         # Paso 8: Reiniciar Apache
         echo "Reiniciando Apache..."
         sudo /usr/local/apache2/bin/apachectl restart
 
-        if [ $? -eq 0 ]; then
-            echo "Apache reiniciado correctamente y escuchando en el puerto $port."
-        else
-            echo "Error al reiniciar Apache."
-            exit 1
-        fi
-        rm apache.html
+        #Reiniciar Apache
+        sudo /usr/local/apache2/bin/apachectl start 
+        sudo ufw allow $port/tcp
+        
         ;;
     1)
         echo "Descargando información de Nginx..."
         curl -s https://nginx.org/en/download.html -o nginx.html
 
         echo "Extrayendo enlace de descarga de Nginx..."
-        nginx_match=$(grep -oP '(\/download\/nginx-\d{1}\.\d{1,}\.\d{1,}\.tar\.gz")' nginx.html | head -n 1)
+        nginx_match=$(grep -oP '(\/download\/nginx-\d{1}\.\d{1,}\.\d{1,}\.tar\.gz)' nginx.html | head -n 1)
         nginx_link="https://nginx.org$nginx_match"
+        version_link=$(echo "$nginx_link" | grep -oP '\d{1}\.\d{1,}\.\d{1,}' | head -n 1)
 
-        # Descargar el .zip
-        echo "Descargando Nginx.zip..."
-        echo "Enlace de descarga: $nginx_link"
+        echo "version -- $version_link"
+        wget -q "$nginx_link"
+        tar -xzvf nginx-1.27.4.tar.gz > /dev/null 2>&1
+        cd nginx-1.27.4
 
-        # Obtener el nombre del archivo
-        nginx_file=$(basename "$nginx_link")
-        echo "Nombre del archivo"
-
-        echo "Descargando Nginx..."
-        wget -O "$nginx_file" "$nginx_link"
-
-        if [ $? -eq 0 ]; then
-            echo "Nginx descargado correctamente."
-        else
-            echo "Error al descargar Nginx."
-            exit 1
-        fi
-
-
-        echo "Descomprimiendo Nginx..."
-        tar -xzf "$nginx_file"
-
-        if [ $? -eq 0 ]; then
-            echo "Nginx descomprimido correctamente."
-        else
-            echo "Error al descomprimir Nginx."
-            exit 1
-        fi
-
-        # Obtener el nombre del directorio descomprimido
-        nginx_dir=$(basename "$nginx_file" .tar.gz)
-
-        echo "Directorio descomprimido: $nginx_dir"
-
-        echo "Configurando Nginx..."
-        cd "$nginx_dir" || { echo "Error al cambiar al directorio de Nginx."; exit 1; }
-        ./configure > /dev/null 2>&1
+        #Configurar Nginx para la instalación
+        ./configure --prefix=/usr/local/nginx --with-http_ssl_module > /dev/null 2>&1
 
         make > /dev/null 2>&1
 
@@ -200,7 +137,7 @@ case "$opc" in
 
         # Configuración del puerto
         while true; do
-            read -p "Ingresa el número de puerto para Nginx (1-65535): " port
+            read -p "Ingresa el número de puerto para Nginx: " port
 
             # Validar que el puerto sea un número y esté en el rango correcto
             if [[ "$port" =~ ^[0-9]+$ ]] && [ "$port" -ge 1 ] && [ "$port" -le 65535 ]; then
@@ -210,32 +147,51 @@ case "$opc" in
             fi
         done
 
-        nginx_conf="/usr/local/nginx/conf/nginx.conf"
+        sudo sed -i "s/listen[[:space:]]*80/listen $port/" /usr/local/nginx/conf/nginx.conf
+        sudo grep "listen" /usr/local/nginx/conf/nginx.conf
 
-        if [ -f "$nginx_conf" ]; then
-            # Cambiar el puerto en la configuración
-            sudo sed -i "s/^\(listen\s*\)[0-9]\+/\1$port/" "$nginx_conf"
-
-            if [ $? -eq 0 ]; then
-                echo "Puerto configurado correctamente en $nginx_conf."
-            else
-                echo "Error al modificar el archivo de configuración."
-                exit 1
-            fi
-        else
-            echo "No se encontró el archivo de configuración de Nginx en $nginx_conf."
-            exit 1
-        fi
-
-        # Reiniciar Nginx
-        sudo /usr/local/nginx/sbin/nginx -s reload
-
-        # Limpiar archivos temporales
-        rm nginx.html
+        #Iniciar Nginx
+        sudo /usr/local/nginx/sbin/nginx 
+        sudo ufw allow $port/tcp
         ;;
     2)
-        echo "Descargando información de Caddy..."
-        curl -s https://caddyserver.com/download -o caddy.html
+        # Descargar Caddy
+        CADDY_VERSION="2.7.6"  # Reemplaza con la última versión si es necesario
+        wget "https://github.com/caddyserver/caddy/releases/download/v$CADDY_VERSION/caddy_${CADDY_VERSION}_linux_amd64.tar.gz"
+
+        # Descomprimir el archivo
+        tar -xzf caddy_${CADDY_VERSION}_linux_amd64.tar.gz
+
+        # Mover el binario a /usr/local/bin
+        sudo mv caddy /usr/local/bin/
+
+        # Crear directorios de configuración y contenido
+        sudo mkdir -p /etc/caddy
+        sudo mkdir -p /var/www/html
+
+        # Crear un archivo Caddyfile básico
+        echo ":80 {
+            root * /var/www/html
+            file_server
+        }" | sudo tee /etc/caddy/Caddyfile > /dev/null
+
+        # Solicitar el puerto al usuario
+        while true; do
+            read -p "Ingresa el número de puerto para Caddy (1-65535): " port
+
+            # Validar que el puerto sea un número y esté en el rango correcto
+            if [[ "$port" =~ ^[0-9]+$ ]] && [ "$port" -ge 1 ] && [ "$port" -le 65535 ]; then
+                break
+            else
+                echo "Puerto no válido. Debe ser un número entre 1 y 65535."
+            fi
+        done
+
+        # Modificar el Caddyfile para usar el puerto especificado
+        sudo sed -i "s/:80/:$port/" /etc/caddy/Caddyfile
+
+        # Iniciar Caddy
+        sudo caddy run --config /etc/caddy/Caddyfile &
 
         ;;
     *)
