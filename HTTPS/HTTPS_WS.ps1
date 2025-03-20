@@ -64,6 +64,7 @@ if (Test-Path "HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" ) {
 
 Write-Host "Actualizando Datos"
 ActualizarDatos -Array $Servidores 
+
 while ($true)
 {
     $opc = MenuServidores
