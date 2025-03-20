@@ -1,6 +1,3 @@
-P    fi
-}
-
 # Función para validar opciones del menú
 function validate_option() {
     local option=$1
