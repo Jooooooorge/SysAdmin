@@ -1,3 +1,41 @@
+#!/bin/bash
+
+# Función para obtener la versión más reciente y la versión beta de un paquete
+function determine_versions() {
+    local package=$1
+
+    # Validar si el paquete existe
+    if ! apt-cache show $package &>/dev/null; then
+        echo "El paquete $package no se encuentra en los repositorios."
+        exit 1
+    fi
+
+    stable_version=$(apt-cache madison $package | awk '{print $3}' | head -1)
+    beta_version=$(apt-cache madison $package | awk '{print $3}' | tail -1)
+
+    # Validar si se encontraron versiones
+    if [[ -z "$stable_version" || -z "$beta_version" ]]; then
+        echo "No se encontraron versiones disponibles para $package."
+        exit 1
+    fi
+}
+
+# Función para validar el número de puerto
+function validate_port() {
+    local port=$1
+
+    if ! [[ "$port" =~ ^[0-9]+$ ]] || [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+        echo "Puerto inválido. Debe ser un número entre 1 y 65535."
+        exit 1
+    fi
+
+    # Verificar si el puerto está ocupado
+    if ss -tuln | grep -q ":$port"; then
+        echo "El puerto $port ya está en uso."
+        exit 1
+    fi
+}
+
 # Función para validar opciones del menú
 function validate_option() {
     local option=$1
