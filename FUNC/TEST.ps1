@@ -141,3 +141,5 @@ function IIS {
     
     Write-Host "IIS configurado correctamente en el puerto $port. Accede a http://localhost:$port/ para ver la página de descarga de IIS Express." -ForegroundColor Green
 }
+
+IIS
