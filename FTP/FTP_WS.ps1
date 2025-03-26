@@ -7,12 +7,7 @@ $GROUP1_DIR = "C:\FTP\reprobados"
 $GROUP2_DIR = "C:\FTP\recursadores"
 $SHARED_DIR = "C:\FTP\ftp_compartida"
 $FTP_SITE_NAME = "FTP"
-# Importar módulos necesarios
-Import-Module WebAdministration -ErrorAction SilentlyContinue
-if (-not (Get-Module WebAdministration)) {
-    Write-Host "Error: No se pudo cargar el módulo WebAdministration. Asegúrate de que IIS esté instalado." -ForegroundColor Red
-exit 1
-}
+
 # Verificar si IIS y FTP están instalados
 $iisInstalled = Get-WindowsFeature Web-Server -ErrorAction SilentlyContinue
 $ftpInstalled = Get-WindowsFeature Web-Ftp-Server -ErrorAction SilentlyContinue
@@ -25,6 +20,12 @@ if (-not $iisInstalled.Installed -or -not $ftpInstalled.Installed) {
         Write-Host "Error: No se pudo instalar IIS y FTP Server. $($_.Exception.Message)" -ForegroundColor Red
         exit 1
     }
+}
+# Importar módulos necesarios
+Import-Module WebAdministration -ErrorAction SilentlyContinue
+if (-not (Get-Module WebAdministration)) {
+    Write-Host "Error: No se pudo cargar el módulo WebAdministration. Asegúrate de que IIS esté instalado." -ForegroundColor Red
+exit 1
 }
 # Crear grupos si no existen
 foreach ($group in @($GROUP1, $GROUP2, $SHARED_GROUP)) {
