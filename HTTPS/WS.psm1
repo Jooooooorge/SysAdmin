@@ -413,6 +413,7 @@ function Instalacion {
                     if(Get-Service -Name Apache2.4 -ErrorAction SilentlyContinue)
                         {
                             Write-Host "Apache iniciado correctamente."
+                            cd "C:\"
                             return
                         }
     
@@ -448,6 +449,7 @@ function Instalacion {
                 else 
                 {
                     Write-Host "Nginx ya esta instalado y configurado"
+                    cd "C:\"
                     return
                 }
                 # Iniciar Nginx
@@ -479,6 +481,7 @@ function Instalacion {
                 } else 
                 {
                     Write-Host "Nginx ya esta instalado y configurado"
+                    cd "C:\"
                     return
                 }                
             } 
