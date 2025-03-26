@@ -8,5 +8,5 @@ ssh administrador@192.168.1.100 "powershell C:\Scripts\mi_script.ps1"
 
 
 
-UBUNTU
+UBUNTU	
 pwd -- Mostrar en que ubicación estas ahora mismo

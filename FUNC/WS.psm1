@@ -312,7 +312,7 @@ function ProbarPuerto {
         [INT] $Puerto
     )
     $connection = Get-NetTCPConnection -LocalPort $Puerto -ErrorAction SilentlyContinue 
-
+    
     if ($connection) {
         Return $true  # Puerto denegado
     } else {
@@ -390,14 +390,13 @@ function Instalacion {
         New-NetFirewallRule -Name $NomZip -DisplayName $NomZip -Protocol TCP -LocalPort $Puerto -Action Allow -Direction Inbound -ErrorAction SilentlyContinue *>$null
     }
     
+    cd C:\
     # Nos dirigimos a la carpeta que contiene el ejecutable
     switch ($opc) {
         # Instalar Apache
         0 {
             Write-Host "Configurando Apache..."
             cd C:\Apache24\conf
-            if(!(Get-Service -Name Apache2.4 -ErrorAction SilentlyContinue))
-            {
                 try {
                     (Get-Content "C:\Apache24\conf\httpd.conf") -replace "Listen \d+", "Listen 0.0.0.0:$Puerto" | Set-Content "C:\Apache24\conf\httpd.conf"
                     cd C:\Apache24\bin
@@ -414,11 +413,6 @@ function Instalacion {
                 } catch {
                     Write-Host "Ocurrió un error en la instalación de Apache: $_"
                 }
-            }
-            else
-            {
-                Write-Host "Apache ya esta instalado y configurado"    
-            }
         }
 
         # Instalar Nginx
