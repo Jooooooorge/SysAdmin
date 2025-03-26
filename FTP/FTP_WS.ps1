@@ -44,6 +44,8 @@ foreach ($dir in @($GROUP1_DIR, $GROUP2_DIR, $SHARED_DIR)) {
 # Establecer permisos de directorios
 function Set-DirectoryPermissions {
     # Permisos para el directorio de reprobados
+    write-host "Grupos: $GROUP1, $GROUP2, $GROUP1_DIR, $GROUP2_DIR, $SHARED_GROUP"
+
     $acl = Get-Acl -Path $GROUP1_DIR
     $acl.SetAccessRuleProtection($true, $false)
     $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("BUILTIN\Administrators", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
@@ -141,7 +143,7 @@ function Test-ValidPassword {
     }
 # Función para mostrar el menú
 function Show-Menu {
-    Clear-Host
+    # Clear-Host
     Write-Host "1. Agregar usuarios"
     Write-Host "2. Cambiar de grupo"
     Write-Host "3. Eliminar usuario"
