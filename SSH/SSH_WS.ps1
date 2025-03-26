@@ -17,9 +17,23 @@ if ($sshFeature.State -ne 'Installed') {
 Start-Service sshd -ErrorAction SilentlyContinue *>$null
 Set-Service -Name sshd -StartupType Automatic -ErrorAction SilentlyContinue *>$null
 
-# Configurar firewall para permitir SSH
-if (-not (Get-NetFirewallRule -Name 'OpenSSH-Server' -ErrorAction SilentlyContinue *>$null)) {
-    New-NetFirewallRule -Name 'OpenSSH-Server' -DisplayName 'OpenSSH Server' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 *>$null
-}
-Write-Host "SSH Instalado y configurado correctamente"
+# Definir el nuevo puerto SSH
+$nuevoPuerto = 2222
 
+# Modificar el archivo de configuración de SSH
+$sshdConfigPath = "C:\ProgramData\ssh\sshd_config"
+
+# Asegurar que el archivo permite escritura
+if ((Get-Content $sshdConfigPath) -match "^#?Port ") {
+    (Get-Content $sshdConfigPath) -replace "^#?Port\s+\d+", "Port $nuevoPuerto" | Set-Content $sshdConfigPath
+} else {
+    Add-Content $sshdConfigPath "`nPort $nuevoPuerto"
+}
+
+# Abrir el nuevo puerto en el firewall
+New-NetFirewallRule -Name "SSH-Custom-Port" -DisplayName "SSH Custom Port" -Direction Inbound -Protocol TCP -Action Allow -LocalPort $nuevoPuerto -ErrorAction SilentlyContinue *>$null
+
+# Reiniciar el servicio SSHD para aplicar los cambios
+Restart-Service sshd -Force -ErrorAction SilentlyContinue *>$null
+
+Write-Host "SSH configurado en el puerto $nuevoPuerto y firewall actualizado"
