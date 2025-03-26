@@ -100,7 +100,6 @@ function MenuDescarga {
         [INT] $opc, [array] $Servidores
     )
     $ServidorActual = $Servidores[$opc]
-    $ServidorActual
     while ($true)
     {
         Write-Host "====== DESCARGAS DISPONIBLES ======"
@@ -231,11 +230,18 @@ function InstalarIIS {
         try {
             # Instalar el rol de servidor web (IIS) con todas las subcaracterísticas y herramientas de gestión
             Write-Host "Instalando el rol de servidor web (IIS)..."
-            Install-WindowsFeature -Name Web-Server -IncludeManagementTools -Source "D:\sources\sxs"
+            # Verificar si los módulos de IIS están instalados
+            Write-Host "Verificando si los módulos de IIS están instalados..."
+            Get-WindowsFeature -Name IIS
+            # Instalar el servicio de Web Server (IIS)
+            Write-Host "Instalando el servicio de Web Server (IIS)..."
+            Install-WindowsFeature -Name Web-Server -IncludeManagementTools
+
+            # Importar el módulo WebAdministration
+            Import-Module WebAdministration
             # Verificar si la instalación fue exitosa
             if ((Get-WindowsFeature -Name Web-Server).Installed) {
                 Write-Host "IIS instalado correctamente."
-
                 # Iniciar el servicio W3SVC
                 Write-Host "Iniciando el servicio W3SVC..."
                 Start-Service -Name W3SVC -ErrorAction Stop
@@ -390,7 +396,7 @@ function Instalacion {
         New-NetFirewallRule -Name $NomZip -DisplayName $NomZip -Protocol TCP -LocalPort $Puerto -Action Allow -Direction Inbound -ErrorAction SilentlyContinue *>$null
     }
     
-    cd C:\
+    cd "C:\"
     # Nos dirigimos a la carpeta que contiene el ejecutable
     switch ($opc) {
         # Instalar Apache
