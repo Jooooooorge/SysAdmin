@@ -21,6 +21,7 @@ if (-not $iisInstalled.Installed -or -not $ftpInstalled.Installed) {
         exit 1
     }
 }
+
 # Importar módulos necesarios
 Import-Module WebAdministration -ErrorAction SilentlyContinue
 if (-not (Get-Module WebAdministration)) {
