@@ -13,13 +13,19 @@ sudo apt install -qq openssh-server -y
 # Configurar la ip estatica
 StaticIpConfig
 
+# Cambiar puerto de SSH a 2222
+sudo sed -i 's/#Port 22/Port 2222/' /etc/ssh/sshd_config
 
-# Habilitamos ssh
+# Habilitar el puerto 2222 en el firewall
+sudo ufw allow 2222/tcp
+
+# Habilitar ssh
 sudo systemctl enable ssh
 
-# Habilitando el puerto 22 para el uso del SSH
-sudo ufw allow ssh
-
-# Inciamos el servidor
+# Iniciar el servidor SSH
 sudo systemctl start ssh 
 
+# Reiniciar el servicio SSH para aplicar cambios
+sudo systemctl restart ssh
+
+echo "El servidor SSH está ahora configurado para usar el puerto 2222."
