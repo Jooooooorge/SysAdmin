@@ -28,6 +28,7 @@ else
 echo "La entrada de montaje para $target ya existe en /etc/fstab, omitiendo..."
 fi
 }
+
 # Función para montar directorios de forma segura
 mount_directory() {
   local source="$1"
@@ -49,6 +50,7 @@ mount_directory() {
   # Agregar al fstab solo si no existe
   add_mount_entry "$source" "$target"
 }
+
 # Función para validar nombres de usuario
 userValid() {
   local usuario="$1"
@@ -63,6 +65,7 @@ userValid() {
   fi
     return 0
 }
+
 # Función para crear usuarios
 createUser() {
 local usuario="$1"
@@ -87,6 +90,7 @@ mount_directory "/srv/ftp/$grupo" "/srv/ftp/usuarios/$usuario/$grupo"
 mount_directory "/srv/ftp/publico" "/srv/ftp/usuarios/$usuario/publico"
 echo "Usuario '$usuario' creado exitosamente en el grupo '$grupo'"
 }
+
 # Función para eliminar usuario
 deleteUser() {
 local usuario="$1"

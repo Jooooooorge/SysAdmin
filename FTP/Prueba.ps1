@@ -1,152 +1,216 @@
-# *********************************************************************************************************
-# Práctica 5
-# Elaborar un servidor FTP que permita administrar usuarios y les de acceso a las
-# siguientes carpetas:
-#   - MiUsuario
-#   - Grupo
-#   - Publico
+# Función para gestionar usuarios
+function Manage-Users {
+    while ($true) {
+        Show-Menu
+        $option = Read-Host "Seleccione una opción"
+        switch ($option) {
+            "1" { 
+                # Agregar usuario
+                $ftpUser = Read-Host "Ingresa el nombre del usuario"
 
-# Configuración de la IP estática
-Import-Module ..\FUNC\WS.ps1 -Force
+                # Validar nombre de usuario
+                if (-not (Test-ValidUsername -Username $ftpUser)) {
+                    Write-Host "Error: El nombre de usuario no es válido. Debe tener entre 3 y 20 caracteres y solo puede contener letras y números." -ForegroundColor Red
+                    Read-Host "Presione Enter para continuar"
+                    continue
+                }
 
-# Instalación del servicio y validación 
-if (Get-WindowsFeature | Where-Object { $_.Name -like "*ftp*" -and $_.Installed }) {
-    Write-Host "FTP Server está instalado."
-} else {
-    Write-Host "FTP Server instalándose..."
-    ConfigurarIpEstatica
-    Install-WindowsFeature -Name Web-FTP-Server -IncludeManagementTools -IncludeAllSubFeature
+                # Verificar si el usuario ya existe
+                if (Get-LocalUser -Name $ftpUser -ErrorAction SilentlyContinue) {
+                    Write-Host "Error: El usuario ya existe" -ForegroundColor Red
+                    Read-Host "Presione Enter para continuar"
+                    continue
+                }
+                $securePassword = Read-Host "Ingrese la contraseña" -AsSecureString
+                $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
+                $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
 
-    if (Get-WindowsFeature | Where-Object { $_.Name -like "*FTP-Server*" -and $_.Installed }) {
-        Write-Host "FTP Server instalado correctamente."
-    }
+                # Validar contraseña
+                if (-not (Test-ValidPassword -Password $plainPassword)) {
+                    Write-Host "Error: La contraseña no es válida. Debe tener entre 8 y 14 caracteres, al menos un número y alguno de estos caracteres especiales: @._*,-" -ForegroundColor Red
+                    Read-Host "Presione Enter para continuar"
+                    continue
+                }
 
-    try {
-        # Configuración del servicio web
-        Import-Module WebAdministration
+                $groupOption = ""
+                while ($groupOption -ne "1" -and $groupOption -ne "2") {
+                    Write-Host "Selecciona el grupo para el usuario" -ForegroundColor Yellow
+                    Write-Host "1. $GROUP1"
+                    Write-Host "2. $GROUP2"
+                    $groupOption = Read-Host "Opción"
+                }
+                $ftpGroup = if ($groupOption -eq "1") { $GROUP1 } else { $GROUP2 }
+                try {
+                    # Crear usuario
+                    New-LocalUser -Name $ftpUser -Password $securePassword -FullName $ftpUser -Description "Usuario FTP" -AccountNeverExpires -PasswordNeverExpires
 
-        # Crear el sitio FTP
-        New-WebFTPSite -Name "FTPServer" -IPAddress "192.168.1.111" -Port 21 -PhysicalPath "C:\FTPServer" -Force
+                    # Agregar usuario a los grupos
+                    Add-LocalGroupMember -Group $ftpGroup -Member $ftpUser
+                    Add-LocalGroupMember -Group $SHARED_GROUP -Member $ftpUser
+                    
+                    # Crear directorio personal
+                    $userDir = "C:\FTP\$ftpUser"
+                    if (-not (Test-Path $userDir)) {
+                        New-Item -Path $userDir -ItemType Directory -Force | Out-Null
+                    }
 
-        # Crear la carpeta raíz del sitio
-        if (!(Test-Path "C:\FTPServer")) {
-            New-Item -Path "C:\FTPServer" -ItemType Directory
-            New-Item -Path "C:\FTPServer\UsuariosLocales" -ItemType Directory
-            New-Item -Path "C:\FTPServer\Reprobados" -ItemType Directory
-            New-Item -Path "C:\FTPServer\Recursadores" -ItemType Directory
-            New-Item -Path "C:\FTPServer\Publico" -ItemType Directory
-        }
+                    # Crear enlaces simbólicos
+                    $userFtpDir = "C:\FTP\LocalUser\$ftpUser"
+                    if (-not (Test-Path $userFtpDir)) {
+                        New-Item -Path $userFtpDir -ItemType Directory -Force | Out-Null
+                    }
 
-        # Asignar la carpeta raíz al sitio
-        Set-ItemProperty "IIS:\Sites\FTPServer" -Name PhysicalPath -Value 'C:\FTPServer'
-
-        # Configuración del usuario anónimo
-        Set-ItemProperty "IIS:\Sites\FTPServer" -Name ftpServer.security.authentication.anonymousAuthentication.enabled -Value $true
-        Add-WebConfiguration "/system.ftpServer/security/authorization" -Location FTPServer -PSPath IIS:\ -Value @{accessType="Allow";users="?";permissions="Read"}
-        icacls "C:\FTPServer\Publico" /grant "IUSR:(OI)(CI)(R)" /t
-
-        # Autenticación básica
-        Set-ItemProperty "IIS:\Sites\FTPServer" -Name ftpServer.security.authentication.basicAuthentication.enabled -Value $true
-
-        # Permitir la política SSL
-        Set-ItemProperty "IIS:\Sites\FTPServer" -Name ftpServer.security.ssl.controlChannelPolicy -Value "SslAllow"
-        Set-ItemProperty "IIS:\Sites\FTPServer" -Name ftpServer.security.ssl.dataChannelPolicy -Value "SslAllow"
-
-        # Aislamiento de usuarios
-        Set-ItemProperty "IIS:\Sites\FTPServer" -Name ftpServer.userIsolation.mode -Value "IsolateRootDirectoryOnly"
-
-        # Reiniciar servicio
-        Restart-WebItem -PSPath 'IIS:\Sites\FTPServer'
-    } catch {
-        Write-Host "Ocurrió un error en la configuración del IIS: $_"
-    }
-}
-
-# Menú de administración de usuarios
-while ($true) {
-    Write-Host "==========================="
-    Write-Host "======= SERVICIO FTP ======="
-    Write-Host "[1] Iniciar Sesión"
-    Write-Host "[2] Agregar Usuario"
-    Write-Host "[3] Editar Usuario"
-    Write-Host "[4] Salir"
-    $opc = Read-Host "Selecciona una opción:"
-
-    switch ($opc) {
-        1 {
-            # Iniciar Sesión
-            $Usuario = Read-Host "Usuario"
-            $Contra = Read-Host "Contraseña" -AsSecureString
-            $Contra = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($Contra))
-
-            try {
-                $webclient = New-Object System.Net.WebClient
-                $webclient.Credentials = New-Object System.Net.NetworkCredential($Usuario, $Contra)
-                $remoteDir = "ftp://192.168.1.111/UsuariosLocales/$Usuario/"
-                $files = $webclient.DownloadString($remoteDir)
-                Write-Host "Inicio de sesión exitoso. Archivos en tu directorio: $files"
-            } catch {
-                Write-Host "Error: Credenciales incorrectas o no se pudo conectar al servidor."
-            }
-        }
-
-        2 {
-            # Agregar Usuario
-            Write-Host "AGREGAR USUARIO"
-
-            # Capturar Datos
-            $Usuario = Read-Host "Usuario"
-            $Contra = Read-Host "Contraseña" -AsSecureString
-            $Grupo = Read-Host "[1] Recursadores | [2] Reprobados"
-
-            # Asignar el grupo correspondiente
-            if ($Grupo -eq 1) {
-                $Grupo = "Recursadores"
-            } elseif ($Grupo -eq 2) {
-                $Grupo = "Reprobados"
+                    # Crear enlace simbólico al directorio personal
+                    cmd /c mklink /D "$userFtpDir\$ftpUser" "$userDir"
+                    
+                    # Crear enlace simbólico al directorio del grupo
+                    if ($ftpGroup -eq $GROUP1) {
+                        cmd /c mklink /D "$userFtpDir\$GROUP1" "$GROUP1_DIR"
+                    } else {
+                        cmd /c mklink /D "$userFtpDir\$GROUP2" "$GROUP2_DIR"
+                    }
+                    
+                    # Crear enlace simbólico al directorio compartido
+                    cmd /c mklink /D "$userFtpDir\$SHARED_GROUP" "$SHARED_DIR" 
+                    
+                    # Configurar permisos FTP
+                    Remove-WebConfigurationProperty -PSPath IIS:\ -Location "$FTP_SITE_NAME/$ftpUser" -Filter "system.ftpServer/security/authorization" -Name "." -ErrorAction SilentlyContinue
+                    Add-WebConfiguration "/system.ftpServer/security/authorization" -Value @{accessType="Allow"; users=$ftpUser; permissions=3} -PSPath IIS:\ -Location "$FTP_SITE_NAME/$ftpUser"
+                    Write-Host "Usuario creado exitosamente" -ForegroundColor Green
+                }
+                catch {
+                    Write-Host "Error al crear el usuario: $($_.Exception.Message)" -ForegroundColor Red
+                }
+                Read-Host "Presione Enter para continuar"
             }
 
-            
-            # Crear el usuario
-            try {
-                # Crear el usuario
-                New-LocalUser -Name $Usuario -Password $Contra -FullName $Usuario -ErrorAction Stop
+            "2" { 
+                # Mover usuarios
+                $username = Read-Host "Ingresa el nombre del usuario que deseas mover"
+                
+                # Verificar si el usuario existe
+                if (-not (Get-LocalUser -Name $username -ErrorAction SilentlyContinue)) {
+                    Write-Host "ERROR: El usuario no existe" -ForegroundColor Red
+                    Read-Host "Presione Enter para continuar"
+                    continue
+                }
+                
+                # Determinar grupo actual
+                $currentGroup = ""
+                if (Get-LocalGroupMember -Group $GROUP1 -Member $username -ErrorAction SilentlyContinue) {
+                    $currentGroup = $GROUP1
+                    $newGroup = $GROUP2
+                }
+                elseif (Get-LocalGroupMember -Group $GROUP2 -Member $username -ErrorAction SilentlyContinue) {
+                    $currentGroup = $GROUP2
+                    $newGroup = $GROUP1
+                }
+                else {
+                    Write-Host "El usuario no pertenece a ninguno de los grupos principales" -ForegroundColor Red
+                    Read-Host "Presione Enter para continuar"
+                    continue
+                }
 
-                # Configurar que la contraseña nunca expire
-                Set-LocalUser -Name $Usuario -PasswordNeverExpires $true
-
-                # Asignar el usuario al grupo
-                Add-LocalGroupMember -Group $Grupo -Member $Usuario -ErrorAction Stop
-
-                Write-Host "Usuario $Usuario creado correctamente y asignado al grupo $Grupo."
-            } catch {
-                Write-Host "Error al crear el usuario: $_"
+                $confirm = Read-Host "¿Deseas mover al usuario $username del grupo $currentGroup al grupo $newGroup? (s/n)"
+                if ($confirm -ne "s" -and $confirm -ne "S") {
+                    Write-Host "Operación cancelada" -ForegroundColor Yellow
+                    Read-Host "Presione Enter para continuar"
+                    continue
+                }
+                try {
+                    # Cambiar grupo
+                    Remove-LocalGroupMember -Group $currentGroup -Member $username
+                    Add-LocalGroupMember -Group $newGroup -Member $username
+                    
+                    # Actualizar enlaces simbólicos
+                    $userFtpDir = "C:\FTP\LocalUser\$username"
+                    
+                    # Eliminar enlace simbólico anterior
+                    if (Test-Path "$userFtpDir\$currentGroup") {
+                        Remove-Item "$userFtpDir\$currentGroup" -Force
+                    }
+                    
+                    # Crear nuevo enlace simbólico
+                    if ($newGroup -eq $GROUP1) {
+                        cmd /c mklink /D "$userFtpDir\$GROUP1" "$GROUP1_DIR"
+                    } else {
+                        cmd /c mklink /D "$userFtpDir\$GROUP2" "$GROUP2_DIR"
+                    }
+                    Write-Host "Usuario movido exitosamente del grupo $currentGroup al grupo $newGroup" -ForegroundColor Green
+                }
+                catch {
+                    Write-Host "Error al mover el usuario: $($_.Exception.Message)" -ForegroundColor Red
+                }
+                Read-Host "Presione Enter para continuar"
+                }
+            "3" { 
+                # Eliminar usuario
+                $username = Read-Host "Ingresa el nombre del usuario a eliminar"
+                
+                # Verificar si el usuario existe
+                if (-not (Get-LocalUser -Name $username -ErrorAction SilentlyContinue)) {
+                    Write-Host "ERROR: El usuario no existe" -ForegroundColor Red
+                    Read-Host "Presione Enter para continuar"
+                    continue
+                }
+                
+                $confirm = Read-Host "¿Estás seguro de eliminar al usuario $username? (s/n)"
+                if ($confirm -eq "s" -or $confirm -eq "S") {
+                try {
+                    # Eliminar enlaces simbólicos y directorios
+                    $userFtpDir = "C:\FTP\LocalUser\$username"
+                    if (Test-Path $userFtpDir) {
+                        Remove-Item $userFtpDir -Recurse -Force
+                    }
+                    
+                    $userDir = "C:\FTP\$username"
+                    if (Test-Path $userDir) {
+                        Remove-Item $userDir -Recurse -Force
+                    }
+                    
+                    # Eliminar usuario
+                    Remove-LocalUser -Name $username
+                    Write-Host "Usuario eliminado exitosamente" -ForegroundColor Green
+                }
+                catch {
+                    Write-Host "Error al eliminar el usuario: $($_.Exception.Message)" -ForegroundColor Red
+                }
+                }
+                else {
+                    Write-Host "Operación cancelada" -ForegroundColor Yellow
+                }
+                    Read-Host "Presione Enter para continuar"
             }
-
-            # Crear la carpeta del usuario
-            if (!(Test-Path "C:\FTPServer\UsuariosLocales\$Usuario")) {
-                New-Item -Path "C:\FTPServer\UsuariosLocales\$Usuario" -ItemType Directory
+            "4" { 
+                # Listar usuarios y grupos
+                Write-Host "Usuarios y sus grupos:" -ForegroundColor Cyan
+                Write-Host "------------------------" -ForegroundColor Cyan
+                $users = Get-LocalUser | Where-Object { $_.Name -ne "Administrator" -and $_.Name -ne "Guest" }
+                foreach ($user in $users) {
+                    $username = $user.Name
+                    $groups = @()
+                    if (Get-LocalGroupMember -Group $GROUP1 -Member $username -ErrorAction SilentlyContinue) {
+                        $groups += $GROUP1
+                    }
+                    if (Get-LocalGroupMember -Group $GROUP2 -Member $username -ErrorAction SilentlyContinue) {
+                        $groups += $GROUP2
+                    }
+                    if (Get-LocalGroupMember -Group $SHARED_GROUP -Member $username -ErrorAction SilentlyContinue) {
+                        $groups += $SHARED_GROUP
+                    }
+                    Write-Host "$username : $($groups -join ', ')" -ForegroundColor Yellow
+                }
+                Read-Host "Presione Enter para continuar"
             }
-
-            # Otorgar permisos
-            icacls "C:\FTPServer\UsuariosLocales\$Usuario" /grant "${Usuario}:(OI)(CI)(M)" /t
-            icacls "C:\FTPServer\$Grupo" /grant "${Usuario}:(OI)(CI)(M)" /t
-            icacls "C:\FTPServer\Publico" /grant "${Usuario}:(OI)(CI)(M)" /t
-        }
-
-        3 {
-            # Editar Usuario (Pendiente de implementación)
-            Write-Host "Opción no implementada aún."
-        }
-
-        4 {
-            # Salir
-            Write-Host "Saliendo..."
-            return
-        }
-
-        default {
-            Write-Host "Opción no válida. Inténtalo de nuevo."
+            "5" { 
+                # Salir
+                Write-Host "Saliendo del programa..." -ForegroundColor Green
+                return
+            }
+            default {
+                Write-Host "Opción inválida" -ForegroundColor Red
+                Read-Host "Presione Enter para continuar"
+            }
         }
     }
 }
