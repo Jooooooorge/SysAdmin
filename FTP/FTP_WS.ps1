@@ -48,7 +48,7 @@ function Set-DirectoryPermissions {
 
     $acl = Get-Acl -Path $GROUP1_DIR
     $acl.SetAccessRuleProtection($true, $false)
-    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("BUILTIN\Administradores", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("Administradores", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
     $acl.AddAccessRule($rule)
     $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($GROUP1, "Modify", "ContainerInherit,ObjectInherit", "None", "Allow")
     $acl.AddAccessRule($rule)
@@ -57,7 +57,7 @@ function Set-DirectoryPermissions {
     # Permisos para el directorio de recursadores
     $acl = Get-Acl -Path $GROUP2_DIR
     $acl.SetAccessRuleProtection($true, $false)
-    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("BUILTIN\Administradores", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("Administradores", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
     $acl.AddAccessRule($rule)
     $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($GROUP2, "Modify", "ContainerInherit,ObjectInherit", "None", "Allow")
     $acl.AddAccessRule($rule)
@@ -66,7 +66,7 @@ function Set-DirectoryPermissions {
     # Permisos para el directorio compartido
     $acl = Get-Acl -Path $SHARED_DIR
     $acl.SetAccessRuleProtection($true, $false)
-    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("BUILTIN\Administradores", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("Administradores", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
     $acl.AddAccessRule($rule)
     $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($SHARED_GROUP, "Modify", "ContainerInherit,ObjectInherit", "None", "Allow")
     $acl.AddAccessRule($rule)

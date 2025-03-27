@@ -32,7 +32,7 @@ function ConfigurarIpEstatica {
     $PrefijoRed = CalcularMascara -Ip $Ip
     if ($PrefijoRed -ne $null) {
         New-NetIPAddress -IPAddress $Ip -PrefixLength $PrefijoRed -DefaultGateway $PuertaEnlace -InterfaceIndex 6 -ErrorAction SilentlyContinue *>$null
-        Set-DnsClientServerAddress -InterfaceIndex 6 -ServerAddresses "8.8.8.8, 8.8.4.4" -ErrorAction SilentlyContinue *>$null
+        Set-DnsClientServerAddress -InterfaceIndex 6 -ServerAddresses @("8.8.8.8", "8.8.4.4") -ErrorAction SilentlyContinue *> $null
         Restart-NetAdapter -Name "Ethernet" -ErrorAction SilentlyContinue *>$null
     }
 }
@@ -232,7 +232,7 @@ function InstalarIIS {
             Write-Host "Instalando el rol de servidor web (IIS)..."
             # Verificar si los módulos de IIS están instalados
             Write-Host "Verificando si los módulos de IIS están instalados..."
-            Get-WindowsFeature -Name IIS
+            $iisInstalled = Get-WindowsFeature Web-Server -ErrorAction SilentlyContinue
             # Instalar el servicio de Web Server (IIS)
             Write-Host "Instalando el servicio de Web Server (IIS)..."
             Install-WindowsFeature -Name Web-Server -IncludeManagementTools
