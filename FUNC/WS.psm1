@@ -84,7 +84,7 @@ function MenuServidores {
         Write-Host " [3] Salir"
         Write-Host "Selecciona un servidor:"
         $opc = Read-Host 
-        if(($opc -eq 0) -or ($opc -eq 1) -or ($opc -eq 2) )
+        if(($opc -eq 0) -or ($opc -eq 1) -or ($opc -eq 2) -or ($opc -eq 3) )
         {
             Return $opc
         }
@@ -235,10 +235,18 @@ function InstalarIIS {
             $iisInstalled = Get-WindowsFeature Web-Server -ErrorAction SilentlyContinue
             # Instalar el servicio de Web Server (IIS)
             Write-Host "Instalando el servicio de Web Server (IIS)..."
-            Install-WindowsFeature -Name Web-Server -IncludeManagementTools
+            if (-not $iisInstalled.Installed) {
+                Write-Host "Instalando IIS" -ForegroundColor Yellow
+                try {
+                        Install-WindowsFeature -Name Web-Server -IncludeManagementTools
+                        Import-Module WebAdministration
+                }
+                catch {
+                    Write-Host "Error: No se pudo instalar IIS. $($_.Exception.Message)" -ForegroundColor Red
+                    exit 1
+                }
+            }
 
-            # Importar el módulo WebAdministration
-            Import-Module WebAdministration
             # Verificar si la instalación fue exitosa
             if ((Get-WindowsFeature -Name Web-Server).Installed) {
                 Write-Host "IIS instalado correctamente."
@@ -388,6 +396,10 @@ function Instalacion {
             return  # Salir de la función si hay un error en la descarga
         }
     }
+
+    Write-host "Archivo estraído"
+    Write-host "Saliendo del programa"
+    return 1
     # Configurar el firewall
 
     # DEBUG Write-Host "Creando nueva regla firewall"

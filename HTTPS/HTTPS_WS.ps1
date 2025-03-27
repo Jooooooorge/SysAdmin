@@ -70,7 +70,8 @@ while ($true)
     $opc = MenuServidores
     if($opc -eq 3 )
     {
-        return
+        write-host "Saliendo...."
+        return 1
     }
     MenuDescarga -opc $opc -Servidores $Servidores
 

@@ -101,33 +101,3 @@ ValidateDomain() {
     local Pattern='^(([a-z]{2,})+\.)+([a-z]{2,})+$'
     [[ "$Domain" =~ $Pattern ]]
 }
-
-# ====== ====== ====== ====== ====== ======
-
-function MenuServidores {
-    while true; do
-        echo "========= ========= ========="
-        echo " SELECCIONA UN SERVIDOR WEB"
-        echo " [0] Apache"
-        echo " [1] Nginx"
-        echo " [2] Caddy"
-        printf "Selecciona un servidor: "
-        read opc
-        # Verificar si la entrada es un número y está en el rango correcto
-        if [[ "$opc" =~ ^[0-9]+$ ]] && [ "$opc" -lt 3 ] && [ "$opc" -ge 0 ]; then
-            echo "Selección: $opc"
-            break
-        else
-            echo "Selecciona una opción válida"
-        fi
-    done
-}
-
-#function MenuDescargar
-#{
-    # Colocar el parametro
-
-    
-#}
-
-

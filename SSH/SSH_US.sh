@@ -3,7 +3,7 @@
 # Script para automatizar la creación de un servidor SSH
 
 # Importar funciones
-source ./US.sh
+source ../FUNC/US.sh
 
 # Asegurarnos de que el sistema esta actualizado
 sudo apt update -qq 
