@@ -12,11 +12,11 @@ source ../FUNC/F_SMTP_US.sh
 while true; do
     echo " ===== USUARIOS SERVIDOR CORREO ====="
     echo " [1] Agregar usuario"
-    read -p "Presione 1" opc
+    read -p "Seleccione:" opc
 
     if [[ "$opc" =~ ^[0-9]+$ ]] && [ "$port" -eq 1 ]; then
         echo " LLAMADA A LA FUNCIÖN PARA CREAR USUARIO"
-        continue
+        break
     else
         read -p "opción invalida, presione cualquier tecla" opc
         
