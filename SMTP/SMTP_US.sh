@@ -16,9 +16,9 @@ while true; do
 
     if [[ "$opc" =~ ^[0-9]+$ ]] && [ "$port" -eq 1 ]; then
         echo " LLAMADA A LA FUNCIÖN PARA CREAR USUARIO"
-        break
+        continue
     else
-        echo "opción invalida, presione cualquier tecla"
-        read -p
+        read -p "opción invalida, presione cualquier tecla" opc
+        
     fi
 done
