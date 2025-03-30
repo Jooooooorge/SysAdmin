@@ -18,6 +18,7 @@ while true; do
         echo " LLAMADA A LA FUNCIÖN PARA CREAR USUARIO"
         break
     else
-        echo "opción invalida, escoje de nuevo"
+        echo "opción invalida, presione cualquier tecla"
+        read -p
     fi
 done
