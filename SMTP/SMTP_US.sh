@@ -14,7 +14,7 @@ while true; do
     echo " [1] Agregar usuario"
     read -p "Seleccione:" opc
 
-    if [[ "$opc" =~ ^[0-9]+$ ]] && [ "$port" -eq 1 ]; then
+    if [[ "$opc" =~ ^[0-9]+$ ]] && [ "$opc" -eq 1 ]; then
         echo " LLAMADA A LA FUNCIÖN PARA CREAR USUARIO"
         break
     else
