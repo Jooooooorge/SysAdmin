@@ -397,9 +397,7 @@ function Instalacion {
         }
     }
 
-    Write-host "Archivo estraído"
-    Write-host "Saliendo del programa"
-    return 1
+
     # Configurar el firewall
 
     # DEBUG Write-Host "Creando nueva regla firewall"

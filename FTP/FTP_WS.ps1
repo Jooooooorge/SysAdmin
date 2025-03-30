@@ -47,6 +47,9 @@ function Set-DirectoryPermissions {
     # Permisos para el directorio de reprobados
     write-host "Grupos: $GROUP1, $GROUP2, $GROUP1_DIR, $GROUP2_DIR, $SHARED_GROUP"
 
+    # para realziar los cmabios primero remover la configuración de los directorios anterior para después asignarle una nueva
+    # Usando Remove-webconfigarationProperty
+
     $acl = Get-Acl -Path $GROUP1_DIR
     $acl.SetAccessRuleProtection($true, $false)
     $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("Administradores", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
@@ -84,6 +87,7 @@ function Configure-FTPServer {
     if (-not (Get-WebSite -Name $FTP_SITE_NAME -ErrorAction SilentlyContinue)) {
     Write-Host "Creando sitio FTP..." -ForegroundColor Yellow
     # Crear el sitio FTP
+    Write-Host "ENTRO A CONFIGURAR"
     New-WebFtpSite -Name $FTP_SITE_NAME -Port 21 -PhysicalPath "C:\FTP" -Force
     # Configurar autenticación básica
     Set-ItemProperty "IIS:\Sites\$FTP_SITE_NAME" -Name ftpServer.security.authentication.basicAuthentication.enabled -Value $true
@@ -91,6 +95,7 @@ function Configure-FTPServer {
     Set-ItemProperty "IIS:\Sites\$FTP_SITE_NAME" -Name ftpServer.security.authentication.anonymousAuthentication.enabled -Value $false
     # Configurar aislamiento de usuario
     Set-ItemProperty "IIS:\Sites\$FTP_SITE_NAME" -Name ftpServer.userIsolation.mode -Value "IsolateRootDirectoryOnly"
+    Set-ItemProperty "IIS:\Sites\$FTP_SITE_NAME" -Name ftpServer.userIsolation.mode -Value 3
     # Configurar autorización
     Add-WebConfiguration "/system.ftpServer/security/authorization" -Value @{accessType="Allow"; users="*"; permissions=1} -PSPath IIS:\ -Location $FTP_SITE_NAME
     
