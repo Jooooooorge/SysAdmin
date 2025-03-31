@@ -43,9 +43,9 @@ function configDNS {
 function installSMTP {
     # Ruta de instalación
     Write-Host "DEBUG*** Iniciando instalación.." -ForegroundColor Yellow
-    
+
     $installerPath = "C:\MailEnable-Setup.exe"
-    $downloadUrl = "https://www.mailenable.com/download.asp"
+    $downloadUrl = "https://www.mailenable.com/Standard64.EXE"
 
     Write-Host " Descargando MailEnable..." -ForegroundColor Cyan
     Invoke-WebRequest -Uri $downloadUrl -OutFile $installerPath
