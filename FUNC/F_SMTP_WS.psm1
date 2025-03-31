@@ -6,23 +6,29 @@ function mostrarMenu {
 }
 
 function configSMTP {
-    param (
-        
-    )
-    # Verifircar que la caracteristica SMTP esta instalada.
-    $smtp = get-WindowsFeature -name web-server
-    if(-not $smtp.Installed){
-        write-host "Dependencias no esta instaladas, instalandose..." -ForegroundColor red
-        Write-Host "Instalando IIS" -ForegroundColor Red
-        Install-WindowsFeature -name web-server
-        write-Host "Instalando MGMT" -ForegroundColor Red
-        Install-WindowsFeature -name web-Mgmt-console
-    }
-    else{
-        write-host "Dependencias ya instaladas" -ForegroundColor Green
-        sleep 2
-    }
+    # Ruta de instalación
+    $installerPath = "C:\MailEnable-Setup.exe"
+    $downloadUrl = "https://www.mailenable.com/download.asp"
 
-    # Configurar Serivodr
+    Write-Host "🔹 Descargando MailEnable..." -ForegroundColor Cyan
+    Invoke-WebRequest -Uri $downloadUrl -OutFile $installerPath
+
+    Write-Host "✅ Descarga completada." -ForegroundColor Green
+
+    # Instalar MailEnable de forma silenciosa
+    Write-Host "🔹 Instalando MailEnable..." -ForegroundColor Cyan
+    Start-Process -FilePath $installerPath -ArgumentList "/quiet" -Wait
+
+    Write-Host "✅ Instalación completada." -ForegroundColor Green
+
+    # Configurar reglas de Firewall para SMTP y POP3
+    Write-Host "🔹 Configurando Firewall..." -ForegroundColor Cyan
+    New-NetFirewallRule -DisplayName "SMTP (25)" -Direction Inbound -Protocol TCP -LocalPort 25 -Action Allow
+    New-NetFirewallRule -DisplayName "POP3 (110)" -Direction Inbound -Protocol TCP -LocalPort 110 -Action Allow
+    New-NetFirewallRule -DisplayName "IMAP (143)" -Direction Inbound -Protocol TCP -LocalPort 143 -Action Allow
+
+    Write-Host "✅ Configuración de Firewall completada." -ForegroundColor Green
+    Write-Host "🚀 MailEnable está listo. Abre su consola de administración para configurar dominios y cuentas."
+
     
 }
