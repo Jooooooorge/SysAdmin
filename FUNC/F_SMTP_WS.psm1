@@ -8,6 +8,7 @@ function mostrarMenu {
 
 function configDNS {
     # Solicitar al usuario el dominio y la IP
+    Write-Host "DEBUG*** Iniciando configuración.." -ForegroundColor Yellow
     $dominio =  "midominio.local"
     $ip = "192.168.1.200"
 
@@ -41,6 +42,8 @@ function configDNS {
 
 function installSMTP {
     # Ruta de instalación
+    Write-Host "DEBUG*** Iniciando instalación.." -ForegroundColor Yellow
+    
     $installerPath = "C:\MailEnable-Setup.exe"
     $downloadUrl = "https://www.mailenable.com/download.asp"
 
