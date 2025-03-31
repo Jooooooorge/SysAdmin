@@ -5,7 +5,8 @@
 # como cliente se utlizara Mutt, SquirellMail u otra opción
 
 # Importar las funciones necesarias
-Import-Module .\F_SMTP_WS.psm1 -Force
+# Import-Module .\F_SMTP_WS.psm1 -Force
+Import-Module ..\FUNC\F_SMTP_WS.psm1 -Force
 
 # Variables 
 $MailEnablePath = "C:\Program Files (x86)\Mail Enable\BIN"
