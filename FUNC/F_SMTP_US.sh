@@ -16,3 +16,11 @@ function mostrarMenu()
 
 }
 
+function confiSquirell()
+{
+    # Función para 
+
+
+    echo ""
+}
+

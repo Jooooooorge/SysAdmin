@@ -19,6 +19,7 @@ instalar_paquetes() {
 }
 
 # Función para configurar el dominio de correo
+# configuración del Postfix
 configurar_dominio() {
     read -p "Introduce el dominio que deseas configurar: " DOMAIN
     HOSTNAME="mail.$DOMAIN"
@@ -72,43 +73,48 @@ configurar_usuario_buzon() {
 }
 
 # Función para configurar SquirrelMail
-configurar_squirrelmail() {
-    INSTALL_DIR="/var/www/html/squirrelmail"
-    DATA_DIR="/var/www/html/squirrelmail/data"
-    ATTACH_DIR="/var/www/html/squirrelmail/attach"
-    CONFIG_FILE="$INSTALL_DIR/config/config.php"
+configurar_squirrelmail() 
+{
+   # Instalar dependencias necesarias
+    sudo apt update
+    sudo apt upgrade -y
+    sudo apt install software-properties-common -y
+    sudo add-apt-repository ppa:ondrej/php -y
+    sudo apt update
+    sudo apt install apache2
+    sudo apt install php7.4 libapache2-mod-php7.4 php-mysql -y
+    # Descargar la última versión estable de SquirrelMail
+    wget https://sourceforge.net/projects/squirrelmail/files/latest/download/squirrelmail-webmail-1.4.22.tar.gz
+    # Extraer el archivo tar
+    sudo tar -xzf squirrelmail-webmail-1.4.22.tar.gz > /dev/null 2>&1
+    # Mover y configurar permisos de la carpeta
+    sudo mv squirrelmail-webmail-1.4.22 /var/www/html/squirrelmail
+    sudo chown -R www-data:www-data /var/www/html/squirrelmail
+    sudo chmod 755 -R /var/www/html/squirrelmail
+    sudo mkdir /var/local/squirrelmail/data
+    sudo chown -R www-data:www-data /var/local/squirrelmail
+    # Configurar squirrelmail
+    cd /var/www/html/squirrelmail/config
+    sudo cp config_default.php config.php
+    sudo ./conf.pl
+    # Configurar Apache
+    cat > /etc/apache2/sites-available/squirrelmail.conf <<EOF
+<VirtualHost *:80>
+    ServerAdmin admin@example.com
+    DocumentRoot /var/www/html/squirrelmail
+    Alias /squirrelmail "/var/www/html/squirrelmail"
 
-    echo "==> Descargando y configurando SquirrelMail..."
-    cd /var/www/html/
-    wget -O squirrelmail.zip "https://sourceforge.net/projects/squirrelmail/files/stable/1.4.22/squirrelmail-webmail-1.4.22.zip/download" -q
-     if [ $? -ne 0 ]; then
-        echo "Error al descargar SquirrelMail."
-        return 1
-    fi
-    unzip -q squirrelmail.zip
-    sudo mv squirrelmail-webmail-1.4.22 squirrelmail
-    rm squirrelmail.zip
-
-    sudo chown -R www-data:www-data "$INSTALL_DIR"
-    sudo chmod -R 755 "$INSTALL_DIR"
-
-    CONFIG_FILE="$INSTALL_DIR/config/config_default.php"
-    if [ ! -f "$CONFIG_FILE" ]; then
-        echo "No se encontró $CONFIG_FILE. Verifique la instalación de SquirrelMail."
-        return 1
-    fi
-
-    sudo sed -i "s/^\$domain.*/\$domain = '$DOMAIN';/" "$CONFIG_FILE"
-    sudo sed -i "s|^\$data_dir.*| \$data_dir = '$DATA_DIR';|" "$CONFIG_FILE"
-    sudo sed -i "s|^\$attachment_dir.*| \$attachment_dir = '$ATTACH_DIR';|" "$CONFIG_FILE"
-    sudo sed -i "s/^\$allow_server_sort.*/\$allow_server_sort = true;/" "$CONFIG_FILE"
-    
-    echo -e "s\n\nq" | perl "$INSTALL_DIR/config/conf.pl"
-
-    sudo systemctl reload apache2
-    sudo systemctl restart apache2
-
-    echo "==> Configuración completada. Accede a SquirrelMail en http://$(hostname -I | awk '{print $1}')/squirrelmail"
+    <Directory "/var/www/html/squirrelmail">
+        Options FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+EOF
+    # Activar el sitio y el módulo de reescritura en Apache
+    a2ensite squirrelmail
+    a2enmod rewrite
+    systemctl restart apache2
 }
 
 # Menú de opciones
@@ -137,3 +143,13 @@ main ()
 
 # main
 main
+
+# Dependencias
+# SERVIDOR CORREO
+#   -Postfix (SMTP)
+#   -Devocot (POP3)
+#   -SquirrelMail (Cliente del correo)
+#   -ThunderBird
+#   -Apache (Para que funcione el Squirrel)
+
+
