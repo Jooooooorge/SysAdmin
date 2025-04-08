@@ -1,51 +1,80 @@
-# Ruta de instalación
-$xamppUrl = "https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/7.4.33/xampp-windows-x64-7.4.33-0-VS16-installer.exe/download"
-$xamppInstaller = "$env:TEMP\xampp-installer.exe"
+# Rutas y URLs
+$xamppUrl = "https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/5.6.40/xampp-win32-5.6.40-0-VC11-installer.exe/download"
+$xamppInstaller = "$env:TEMP\xampp5-installer.exe"
 $squirrelUrl = "https://sourceforge.net/projects/squirrelmail/files/latest/download"
 $squirrelZip = "$env:TEMP\squirrelmail.zip"
-$squirrelDir = "C:\xampp\htdocs\squirrelmail"
+$xamppPath = "C:\xampp"
+$squirrelTarget = "$xamppPath\htdocs\squirrelmail"
 
-Write-Host "Descargando XAMPP..."
-Invoke-WebRequest -Uri $xamppUrl -OutFile $xamppInstaller
+# Función para verificar existencia de archivos o carpetas
+function Check-Exists($path, $desc) {
+    if (!(Test-Path $path)) {
+        Write-Error "❌ $desc no encontrado en: $path. Abortando..."
+        exit 1
+    }
+    else {
+        Write-Host "✅ $desc encontrado."
+    }
+}
 
-Write-Host "Instalando XAMPP..."
-Start-Process -FilePath $xamppInstaller -ArgumentList "--mode unattended" -Wait
+# Descargar instalador de XAMPP
+Write-Host "`n🔽 Descargando XAMPP 5.6.40..."
+Invoke-WebRequest -Uri $xamppUrl -OutFile $xamppInstaller -UseBasicParsing
+Check-Exists $xamppInstaller "Instalador de XAMPP"
 
-# Espera que termine de instalar
-Start-Sleep -Seconds 10
+# Ejecutar instalador en modo gráfico (no tiene modo silencioso oficial en esta versión)
+Write-Host "`n⚙️ Ejecutando instalador de XAMPP (por favor instalá manualmente en C:\xampp)"
+Start-Process -FilePath $xamppInstaller -Wait
 
-# Iniciar Apache y Mercury
-Write-Host "Iniciando Apache y Mercury..."
-Start-Process "C:\xampp\xampp-control.exe"
-Start-Sleep -Seconds 10
-
-# Activar Mercury (manual o por línea de comandos si se hace vía scripts)
-# Alternativamente, usa nssm para ejecutarlos como servicio
+# Verificar instalación
+Check-Exists "$xamppPath\xampp-control.exe" "XAMPP Control Panel"
+Check-Exists "$xamppPath\apache\bin\httpd.exe" "Apache Server"
+Check-Exists "$xamppPath\MercuryMail\mercury.exe" "Mercury Mail"
 
 # Descargar SquirrelMail
-Write-Host "Descargando SquirrelMail..."
-Invoke-WebRequest -Uri $squirrelUrl -OutFile $squirrelZip
+Write-Host "`n🔽 Descargando SquirrelMail..."
+Invoke-WebRequest -Uri $squirrelUrl -OutFile $squirrelZip -UseBasicParsing
+Check-Exists $squirrelZip "Archivo ZIP de SquirrelMail"
 
-Write-Host "Extrayendo SquirrelMail..."
-Expand-Archive -Path $squirrelZip -DestinationPath "C:\xampp\htdocs\"
+# Extraer SquirrelMail
+Write-Host "📂 Extrayendo SquirrelMail..."
+Expand-Archive -Path $squirrelZip -DestinationPath "$xamppPath\htdocs" -Force
 
-# Mover carpeta extraída a nombre estándar (puede variar según ZIP)
-$squirrelExtracted = Get-ChildItem "C:\xampp\htdocs\" | Where-Object { $_.Name -like "squirrelmail*" -and $_.PSIsContainer } | Select-Object -First 1
-Rename-Item -Path $squirrelExtracted.FullName -NewName "squirrelmail"
+# Detectar carpeta extraída y renombrar
+$squirrelExtracted = Get-ChildItem "$xamppPath\htdocs" | Where-Object { $_.Name -like "squirrelmail*" -and $_.PSIsContainer } | Select-Object -First 1
+if ($squirrelExtracted) {
+    Rename-Item -Path $squirrelExtracted.FullName -NewName "squirrelmail" -Force
+    Write-Host "✅ SquirrelMail extraído en: $squirrelTarget"
+}
+else {
+    Write-Error "❌ Carpeta extraída de SquirrelMail no encontrada. Abortando..."
+    exit 1
+}
 
-# Configurar PHP (si es necesario)
-Write-Host "Habilitando extensiones IMAP y mbstring..."
-$phpIni = "C:\xampp\php\php.ini"
-(gc $phpIni) -replace "; extension=imap", "extension=imap" `
-    -replace "; extension=mbstring", "extension=mbstring" | Set-Content $phpIni
+# Habilitar extensiones en php.ini
+$phpIni = "$xamppPath\php\php.ini"
+Check-Exists $phpIni "Archivo php.ini"
+
+Write-Host "🛠️ Activando extensiones IMAP y mbstring..."
+(Get-Content $phpIni) -replace ";extension=imap", "extension=imap" `
+    -replace ";extension=mbstring", "extension=mbstring" | Set-Content $phpIni
+
+# Verificar activación
+$iniContent = Get-Content $phpIni
+if ($iniContent -match "extension=imap" -and $iniContent -match "extension=mbstring") {
+    Write-Host "✅ Extensiones activadas correctamente"
+}
+else {
+    Write-Error "❌ No se pudieron activar extensiones PHP"
+    exit 1
+}
 
 # Reiniciar Apache
-Write-Host "Reiniciando Apache..."
-& "C:\xampp\apache_stop.bat"
-Start-Sleep -Seconds 3
-& "C:\xampp\apache_start.bat"
+Write-Host "🔁 Reiniciando Apache..."
+& "$xamppPath\apache_stop.bat"
+Start-Sleep -Seconds 2
+& "$xamppPath\apache_start.bat"
 
-# Mostrar IP y URL
+# Mostrar dirección local
 $ip = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias "Ethernet" | Where-Object { $_.IPAddress -notlike "169.*" }).IPAddress
-Write-Host "`nServidor Web listo. Accede a: http://$ip/squirrelmail"
-
+Write-Host "`n🌐 SquirrelMail disponible en: http://$ip/squirrelmail"
