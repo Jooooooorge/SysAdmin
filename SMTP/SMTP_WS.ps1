@@ -1,59 +1,51 @@
-# ========= ========= ========= ========= ========= ========= ========= ========= ========= =========
-# Practica 8
-# Descripción:
-# Hacer el script para generar un servidor de correos que utilice SMTP y POP3, 
-# como cliente se utlizara Mutt, SquirellMail u otra opción
+# Ruta de instalación
+$xamppUrl = "https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/7.4.33/xampp-windows-x64-7.4.33-0-VS16-installer.exe/download"
+$xamppInstaller = "$env:TEMP\xampp-installer.exe"
+$squirrelUrl = "https://sourceforge.net/projects/squirrelmail/files/latest/download"
+$squirrelZip = "$env:TEMP\squirrelmail.zip"
+$squirrelDir = "C:\xampp\htdocs\squirrelmail"
 
-# Importar las funciones necesarias
-# Import-Module .\F_SMTP_WS.psm1 -Force
-Import-Module ..\FUNC\F_SMTP_WS.psm1 -Force
+Write-Host "Descargando XAMPP..."
+Invoke-WebRequest -Uri $xamppUrl -OutFile $xamppInstaller
 
-# Variables 
-$MailEnablePath = "C:\Program Files (x86)\Mail Enable\BIN"
-$PostOffice = "midominio.local"
-$Domain = "midominio.local"
+Write-Host "Instalando XAMPP..."
+Start-Process -FilePath $xamppInstaller -ArgumentList "--mode unattended" -Wait
 
-# Configurar mi DNS
-# *****************
-configDNS
+# Espera que termine de instalar
+Start-Sleep -Seconds 10
 
-# Llamar a la función para crear el servidor de correo
-installSMTP 
-configSMTP -MailEnablePath $MailEnablePath -PostOffice $PostOffice -Domain $Domain
+# Iniciar Apache y Mercury
+Write-Host "Iniciando Apache y Mercury..."
+Start-Process "C:\xampp\xampp-control.exe"
+Start-Sleep -Seconds 10
 
-while ($true)
-{
-    $opc = mostrarMenu
-    if ($opc -eq 1)
-    {
-        while ($true)
-        {
-            write-Host "Ingresa un nombre de usuario:"
-            $User = read-host
-            if (checkUser -User $User)
-            {
-                break;
-            }
-        }
+# Activar Mercury (manual o por línea de comandos si se hace vía scripts)
+# Alternativamente, usa nssm para ejecutarlos como servicio
 
-        while ($true)
-        {
-            write-Host "Ingresa una contraseña:"
-            $Password = read-host
-            if (checkPassword -User $Password)
-            {
-                break;
-            }
-        }
-        
-        addUser -MailEnablePath $MailEnablePath -PostOffice $PostOffice -User $User -Password $Password
-    }
-    elseif ($opc -eq 2)
-    {
-        return 1 
-    }
-    else
-    {
-        Write-Host "Opción invalida" -ForegroundColor Red
-    }
-}
+# Descargar SquirrelMail
+Write-Host "Descargando SquirrelMail..."
+Invoke-WebRequest -Uri $squirrelUrl -OutFile $squirrelZip
+
+Write-Host "Extrayendo SquirrelMail..."
+Expand-Archive -Path $squirrelZip -DestinationPath "C:\xampp\htdocs\"
+
+# Mover carpeta extraída a nombre estándar (puede variar según ZIP)
+$squirrelExtracted = Get-ChildItem "C:\xampp\htdocs\" | Where-Object { $_.Name -like "squirrelmail*" -and $_.PSIsContainer } | Select-Object -First 1
+Rename-Item -Path $squirrelExtracted.FullName -NewName "squirrelmail"
+
+# Configurar PHP (si es necesario)
+Write-Host "Habilitando extensiones IMAP y mbstring..."
+$phpIni = "C:\xampp\php\php.ini"
+(gc $phpIni) -replace "; extension=imap", "extension=imap" `
+    -replace "; extension=mbstring", "extension=mbstring" | Set-Content $phpIni
+
+# Reiniciar Apache
+Write-Host "Reiniciando Apache..."
+& "C:\xampp\apache_stop.bat"
+Start-Sleep -Seconds 3
+& "C:\xampp\apache_start.bat"
+
+# Mostrar IP y URL
+$ip = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias "Ethernet" | Where-Object { $_.IPAddress -notlike "169.*" }).IPAddress
+Write-Host "`nServidor Web listo. Accede a: http://$ip/squirrelmail"
+
