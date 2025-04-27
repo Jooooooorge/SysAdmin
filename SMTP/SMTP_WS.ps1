@@ -1,80 +1,93 @@
-# Rutas y URLs
-$xamppUrl = "https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/5.6.40/xampp-win32-5.6.40-0-VC11-installer.exe/download"
-$xamppInstaller = "$env:TEMP\xampp5-installer.exe"
-$squirrelUrl = "https://sourceforge.net/projects/squirrelmail/files/latest/download"
-$squirrelZip = "$env:TEMP\squirrelmail.zip"
-$xamppPath = "C:\xampp"
-$squirrelTarget = "$xamppPath\htdocs\squirrelmail"
+# ======== ======== ======== ======== ======== ======== ======== ========
+# Practica 8
 
-# Función para verificar existencia de archivos o carpetas
-function Check-Exists($path, $desc) {
-    if (!(Test-Path $path)) {
-        Write-Error "❌ $desc no encontrado en: $path. Abortando..."
-        exit 1
+
+function install_mercury {
+
+    # Instalacion de mercury
+    $downloadPath = "https://download-us.pmail.com/m32-480.exe"
+    $downloadedPath = "$env:HOMEPATH\Downloads\mercury.exe"
+
+    Invoke-WebRequest -Uri $downloadPath -Outfile $downloadedPath -UseBasicParsing -ErrorAction Stop
+    cd $env:HOMEPATH\Downloads
+    Start-Process .\mercury.exe
+
+    New-NetFirewallRule -DisplayName "SMTP" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 25, 110, 143, 587, 993, 995 -Profile Any -Enabled True
+}
+
+function install_xampp {
+    
+    #Seccion de instalacion de XAMPP
+    New-Item -Path "C:\Installers" -ItemType Directory -Force | Out-Null
+
+    # Descargar XAMPP (asegurate de tener curl en PowerShell v5+)
+    $xamppUrl = "https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/5.6.40/xampp-windows-x64-5.6.40-1-VC11-installer.exe/download"
+    $outputPath = "C:\Installers\xampp-installer.exe"
+
+
+    curl.exe -L $xamppUrl -o $outputPath
+
+    # Ejecutar el instalador de XAMPP
+    cd "C:\Installers"
+    Start-Process -FilePath .\xampp-installer.exe
+}
+function install_squirrel {
+    
+    #Seccion de instalacion de SquirrelMail
+    # Ruta de instalación de Apache (htdocs)
+    $htdocsPath = "C:\xampp\htdocs\squirrelmail"
+
+    # Crear carpeta
+    New-Item -Path $htdocsPath -ItemType Directory -Force | Out-Null
+
+    # Descargar desde GitHub
+    $zipUrl = "https://sourceforge.net/projects/squirrelmail/files/stable/1.4.22/squirrelmail-webmail-1.4.22.zip/download"
+    $zipPath = "C:\Installers\squirrelmail.zip"
+
+    curl.exe -L $zipUrl -o $zipPath
+
+    # Descomprimir el archivo ZIP
+    Expand-Archive -Path $zipPath -DestinationPath "C:\Installers" -Force
+
+    # Copiar contenido a htdocs
+    $extractedFolder = "C:\Installers\squirrelmail-webmail-1.4.22"
+    Copy-Item -Path "$extractedFolder\*" -Destination $htdocsPath -Recurse -Force
+
+
+    # Crear carpeta de configuración si no existe
+    $configFolder = "$htdocsPath\config"
+    New-Item -Path $configFolder -ItemType Directory -Force | Out-Null
+
+    #Renombramos y editamos el archivo de configuracion
+    Rename-Item -Path C:\xampp\htdocs\squirrelmail\config\config_default.php -NewName "config.php"            #Aqui el dominio que se configuro en la instalacion
+    (Get-Content "C:\xampp\htdocs\squirrelmail\config\config.php") -replace '\$domain\s*=\s*''[^'']+'';', '$domain = ''localhost'';' | Set-Content "C:\xampp\htdocs\squirrelmail\config\config.php"
+    (Get-Content "C:\xampp\htdocs\squirrelmail\config\config.php") -replace '\$data_dir\s*=\s*''[^'']+'';', '$data_dir = ''C:/xampp/htdocs/squirrelmail/data/'';' | Set-Content "C:\xampp\htdocs\squirrelmail\config\config.php"
+
+    # Configurar permisos (IMPORTANTE)
+    Write-Host "Configurando permisos..." -ForegroundColor Cyan
+    try {
+        $acl = Get-Acl $htdocsPath
+        $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+            "Todos", # O "IUSR" si usas IIS
+            "FullControl",
+            "ContainerInherit,ObjectInherit",
+            "None",
+            "Allow"
+        )
+        $acl.SetAccessRule($accessRule)
+        Set-Acl -Path $htdocsPath -AclObject $acl
     }
-    else {
-        Write-Host "✅ $desc encontrado."
+    catch {
+        Write-Warning "No se pudieron configurar los permisos: $_"
     }
+
 }
 
-# Descargar instalador de XAMPP
-Write-Host "`n🔽 Descargando XAMPP 5.6.40..."
-Invoke-WebRequest -Uri $xamppUrl -OutFile $xamppInstaller -UseBasicParsing
-Check-Exists $xamppInstaller "Instalador de XAMPP"
 
-# Ejecutar instalador en modo gráfico (no tiene modo silencioso oficial en esta versión)
-Write-Host "`n⚙️ Ejecutando instalador de XAMPP (por favor instalá manualmente en C:\xampp)"
-Start-Process -FilePath $xamppInstaller -Wait
-
-# Verificar instalación
-Check-Exists "$xamppPath\xampp-control.exe" "XAMPP Control Panel"
-Check-Exists "$xamppPath\apache\bin\httpd.exe" "Apache Server"
-Check-Exists "$xamppPath\MercuryMail\mercury.exe" "Mercury Mail"
-
-# Descargar SquirrelMail
-Write-Host "`n🔽 Descargando SquirrelMail..."
-Invoke-WebRequest -Uri $squirrelUrl -OutFile $squirrelZip -UseBasicParsing
-Check-Exists $squirrelZip "Archivo ZIP de SquirrelMail"
-
-# Extraer SquirrelMail
-Write-Host "📂 Extrayendo SquirrelMail..."
-Expand-Archive -Path $squirrelZip -DestinationPath "$xamppPath\htdocs" -Force
-
-# Detectar carpeta extraída y renombrar
-$squirrelExtracted = Get-ChildItem "$xamppPath\htdocs" | Where-Object { $_.Name -like "squirrelmail*" -and $_.PSIsContainer } | Select-Object -First 1
-if ($squirrelExtracted) {
-    Rename-Item -Path $squirrelExtracted.FullName -NewName "squirrelmail" -Force
-    Write-Host "✅ SquirrelMail extraído en: $squirrelTarget"
-}
-else {
-    Write-Error "❌ Carpeta extraída de SquirrelMail no encontrada. Abortando..."
-    exit 1
+function main {
+    install_mercury
+    install_xampp
+    install_squirrel
 }
 
-# Habilitar extensiones en php.ini
-$phpIni = "$xamppPath\php\php.ini"
-Check-Exists $phpIni "Archivo php.ini"
-
-Write-Host "🛠️ Activando extensiones IMAP y mbstring..."
-(Get-Content $phpIni) -replace ";extension=imap", "extension=imap" `
-    -replace ";extension=mbstring", "extension=mbstring" | Set-Content $phpIni
-
-# Verificar activación
-$iniContent = Get-Content $phpIni
-if ($iniContent -match "extension=imap" -and $iniContent -match "extension=mbstring") {
-    Write-Host "✅ Extensiones activadas correctamente"
-}
-else {
-    Write-Error "❌ No se pudieron activar extensiones PHP"
-    exit 1
-}
-
-# Reiniciar Apache
-Write-Host "🔁 Reiniciando Apache..."
-& "$xamppPath\apache_stop.bat"
-Start-Sleep -Seconds 2
-& "$xamppPath\apache_start.bat"
-
-# Mostrar dirección local
-$ip = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias "Ethernet" | Where-Object { $_.IPAddress -notlike "169.*" }).IPAddress
-Write-Host "`n🌐 SquirrelMail disponible en: http://$ip/squirrelmail"
+main
