@@ -19,7 +19,7 @@ $Dominio = "jorge.com"  # Cambia esto si quieres otro nombre de dominio
 Install-ADDSForest `
     -DomainName $Dominio `
     -DomainNetbiosName "jorge" `
-    -SafeModeAdministratorPassword (ConvertTo-SecureString "jorge123" -AsPlainText -Force) `
+    -SafeModeAdministratorPassword (ConvertTo-SecureString "Jorge1234$" -AsPlainText -Force) `
     -InstallDns `
     -Force
 
