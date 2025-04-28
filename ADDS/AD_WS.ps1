@@ -20,6 +20,7 @@ Install-ADDSForest `
     -DomainName $Dominio `
     -DomainNetbiosName "jorge" `
     -SafeModeAdministratorPassword (ConvertTo-SecureString "Jorge1234$" -AsPlainText -Force) `
+    -AdministratorPassword (ConvertTo-SecureString "Jorge1234$" -AsPlainText -Force) `
     -InstallDns `
     -Force
 
