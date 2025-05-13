@@ -20,8 +20,8 @@ function InstalarADDS{
     
 }
 function InstalarADDS_Pro {
-    $Usuario1 = ""
-    $Usuario2 = ""
+    $Usuario1 = "Usuario1"
+    $Usuario2 = "Usuario2"
     # Instalar el rol de Active Directory Domain Services
     Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
 
@@ -69,14 +69,6 @@ function InstalarADDS_Pro {
         -Path "OU=Grupo2,DC=$Seg0,DC=$Seg1" `
         -AccountPassword (ConvertTo-SecureString "Jorge123$" -AsPlainText -Force) `
         -Enabled $true
-
-    #Validar que si creo el usario
-    if (Get-ADUser -Filter {Name -eq $Usuario1}){
-    write-host "Usuario creado exitosamente"
-    return
-    } else {
-    Write-host "Usuario no creado"
-    }
 
     # Llamada a la función de set horarios
     EstablecerHorario_Grupo1 -seg0 $Seg0 -seg1 $Seg1
