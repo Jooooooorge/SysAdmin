@@ -14,8 +14,7 @@
 #>
 Import-Module .\WS.psm1 -Force
 
-InstalarADDS
-nuevoUsuarioAD -Dominio $Dominio
+InstalarADDS_Pro
 
 
 

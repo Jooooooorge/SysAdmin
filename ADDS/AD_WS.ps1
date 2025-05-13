@@ -5,13 +5,7 @@
 # Se van a crear dos UO (Cuates | No cuates) y 
 # un usuario en cada una
 # Un dominio con dos equipos (Linux | Windows)
-Import-Module ..\FUNC\WS.psm1 -Force
+Import-Module .\WS.psm1 -Force
 
 InstalarADDS
 nuevoUsuarioAD -Dominio $Dominio
-
-
-
-
-
-

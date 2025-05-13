@@ -29,10 +29,10 @@ function InstalarADDS_Pro {
     Import-Module ADDSDeployment
 
     # Configurar el nuevo dominio
-        $Dominio = "jorge.com"  
+        $Dominio = "diadelnino.com"  
     Install-ADDSForest `
         -DomainName $Dominio `
-        -DomainNetbiosName "jorge" `
+        -DomainNetbiosName "diadelnino" `
         -SafeModeAdministratorPassword (ConvertTo-SecureString "Jorge1234$" -AsPlainText -Force) `
         -InstallDns `
         -Force
@@ -79,9 +79,31 @@ function InstalarADDS_Pro {
     }
 
     # Llamada a la función de set horarios
-    # EstablecerHorario_Grupo1 -seg0 $Seg0 -seg1 $Seg1
-    # EstablecerHorario_Grupo2 -seg0 $Seg0 -seg1 $Seg1
+    EstablecerHorario_Grupo1 -seg0 $Seg0 -seg1 $Seg1
+    EstablecerHorario_Grupo2 -seg0 $Seg0 -seg1 $Seg1
     
+    # Limitar el tamaño
+    New-Item -ItemType Directory -Path "D:\Grupo1"
+    
+    $acl = Get-Acl "D:\Grupo1"
+    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("Grupo1","FullControl","ContainerInherit,ObjectInherit","None","Allow")
+    $acl.SetAccessRule($rule)
+    Set-Acl "D:\Grupo1" $acl
+
+    fsutil quota track D:
+    fsutil quota enforce D:
+    fsutil quota modify D: 5242880 5242880 Grupo1
+
+    New-Item -ItemType Directory -Path "D:\Grupo2"
+    # Permisos
+    $acl = Get-Acl "D:\Grupo2"
+    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("Grupo2","FullControl","ContainerInherit,ObjectInherit","None","Allow")
+    $acl.SetAccessRule($rule)
+    Set-Acl "D:\Grupo2" $acl
+
+    # Cuota
+    fsutil quota modify D: 10485760 10485760 Grupo2
+
 
 }
 function EstablecerHorario_Grupo1 {
