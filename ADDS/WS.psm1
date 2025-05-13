@@ -82,6 +82,13 @@ function InstalarADDS_Pro {
     EstablecerHorario_Grupo1 -seg0 $Seg0 -seg1 $Seg1
     EstablecerHorario_Grupo2 -seg0 $Seg0 -seg1 $Seg1
     
+    # Llamada al función limitar tamaño
+    # LimitarTamaño
+
+
+}
+
+function LimitarTamaño {
     # Limitar el tamaño
     New-Item -ItemType Directory -Path "D:\Grupo1"
     
@@ -95,6 +102,7 @@ function InstalarADDS_Pro {
     fsutil quota modify D: 5242880 5242880 Grupo1
 
     New-Item -ItemType Directory -Path "D:\Grupo2"
+    
     # Permisos
     $acl = Get-Acl "D:\Grupo2"
     $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("Grupo2","FullControl","ContainerInherit,ObjectInherit","None","Allow")
@@ -103,8 +111,7 @@ function InstalarADDS_Pro {
 
     # Cuota
     fsutil quota modify D: 10485760 10485760 Grupo2
-
-
+    
 }
 function EstablecerHorario_Grupo1 {
     param (
