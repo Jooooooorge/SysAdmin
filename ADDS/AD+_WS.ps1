@@ -19,42 +19,19 @@ function Configurar-DominioAD(){
 
 function Crear-UnidadesOrganizativas(){
     try {
-        # Verificamos si ya existen las OUs
-        $ou1 = Get-ADOrganizationalUnit -Filter "Name -eq 'grupo1'" -ErrorAction SilentlyContinue
-        $ou2 = Get-ADOrganizationalUnit -Filter "Name -eq 'grupo2'" -ErrorAction SilentlyContinue
-
-        if ($ou1 -and $ou2) {
-            echo "Las unidades organizativas ya existen"
+        if((Get-ADGroup -Filter "Name -eq 'grupo1'") -and (Get-ADGroup -Filter "Name -eq 'grupo2'") -and (Get-ADOrganizationalUnit -Filter "Name -eq 'grupo1'") -and (Get-ADOrganizationalUnit -Filter "Name -eq 'grupo2'")){
+            echo "Los grupos ya se encuentran creados en este equipo"
         }
-        else {
-            # Crear las OUs si no existen
-            if (-not $ou1) {
-                New-ADOrganizationalUnit -Name "grupo1" -Path "DC=dia-nino,DC=com"
-                echo "OU grupo1 creada"
-            }
-            if (-not $ou2) {
-                New-ADOrganizationalUnit -Name "grupo2" -Path "DC=dia-nino,DC=com"
-                echo "OU grupo2 creada"
-            }
+        else{
+            New-ADGroup -Name "grupo1" -SamAccountName "grupo1" -GroupScope Global -GroupCategory Security
+            New-ADGroup -Name "grupo2" -SamAccountName "grupo2" -GroupScope Global -GroupCategory Security
+            echo "Grupos creados correctamente"
         }
-
-        # Crear grupos si no existen
-        if (-not (Get-ADGroup -Filter "Name -eq 'grupo1'" -ErrorAction SilentlyContinue)) {
-            New-ADGroup -Name "grupo1" -SamAccountName "grupo1" -GroupScope Global -GroupCategory Security -Path "OU=grupo1,DC=dia-nino,DC=com"
-            echo "Grupo grupo1 creado"
-        }
-
-        if (-not (Get-ADGroup -Filter "Name -eq 'grupo2'" -ErrorAction SilentlyContinue)) {
-            New-ADGroup -Name "grupo2" -SamAccountName "grupo2" -GroupScope Global -GroupCategory Security -Path "OU=grupo2,DC=dia-nino,DC=com"
-            echo "Grupo grupo2 creado"
-        }
-
     }
     catch {
         echo $Error[0].ToString()
     }
 }
-
 
 function Es-ContrasenaValida($contrasena) {
     return ($contrasena.Length -ge 8 -and
@@ -203,41 +180,38 @@ function Configurar-Horarios($nombreUsuario, $grupo){
 }
 
 function Configurar-AlmacenamientoArchivos(){
-    Import-Module GroupPolicy
     try {
-        if (Get-GPO -Name "Cuota5MbGrupoUno" -ErrorAction SilentlyContinue) {
-            echo "La politica de configuracion de archivos para el grupo uno ya existe"
+        $nombreCuotaGrupoUno = "Cuota5MbGrupoUno"
+        $nombreCuotaGrupoDos = "Cuota10MbGrupoDos"
+
+        if (-not (Get-GPO -Name $nombreCuotaGrupoUno -ErrorAction SilentlyContinue)) {
+            New-GPO -Name $nombreCuotaGrupoUno | Out-Null
+            echo "GPO $nombreCuotaGrupoUno creada"
         } else {
-            $gpo1 = "Cuota5MbGrupoUno"
-            New-GPO -Name $gpo1
-            New-GPLink -Name $gpo1 -Target "OU=grupo1,DC=dia-nino,DC=com" -Enforced "Yes"
-
-            Set-GPRegistryValue -Name $gpo1 -Key "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" -ValueName "EnableProfileQuota" -Type DWord -Value 1
-            Set-GPRegistryValue -Name $gpo1 -Key "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" -ValueName "MaxProfileSize" -Type DWord -Value 5000
-            Set-GPRegistryValue -Name $gpo1 -Key "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" -ValueName "WarnUser" -Type DWord -Value 1
-            Set-GPRegistryValue -Name $gpo1 -Key "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" -ValueName "WarnUserTimeout" -Type DWord -Value 10
-            Set-GPRegistryValue -Name $gpo1 -Key "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" -ValueName "ProfileQuotaMessage" -Type String -Value "Has excedido el limite de 5 MB por perfil. Libera espacio para evitar problemas."
-
-            echo "Regla para el grupo uno configurada correctamente"
+            echo "GPO $nombreCuotaGrupoUno ya existe"
         }
 
-        if (Get-GPO -Name "Cuota10MbGrupo2" -ErrorAction SilentlyContinue) {
-            echo "La politica de configuracion de archivos para el grupo dos ya existe"
+        if (-not (Get-GPO -Name $nombreCuotaGrupoDos -ErrorAction SilentlyContinue)) {
+            New-GPO -Name $nombreCuotaGrupoDos | Out-Null
+            echo "GPO $nombreCuotaGrupoDos creada"
         } else {
-            $gpo2 = "Cuota10MbGrupoDos"
-            New-GPO -Name $gpo2
-            New-GPLink -Name $gpo2 -Target "OU=grupo2,DC=dia-nino,DC=com" -Enforced "Yes"
-
-            Set-GPRegistryValue -Name $gpo2 -Key "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" -ValueName "EnableProfileQuota" -Type DWord -Value 1
-            Set-GPRegistryValue -Name $gpo2 -Key "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" -ValueName "MaxProfileSize" -Type DWord -Value 10000
-            Set-GPRegistryValue -Name $gpo2 -Key "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" -ValueName "WarnUser" -Type DWord -Value 1
-            Set-GPRegistryValue -Name $gpo2 -Key "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" -ValueName "WarnUserTimeout" -Type DWord -Value 10
-            Set-GPRegistryValue -Name $gpo2 -Key "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" -ValueName "ProfileQuotaMessage" -Type String -Value "Has excedido el limite de 10 MB por perfil. Libera espacio para evitar problemas."
-
-            echo "Regla para el grupo dos configurada correctamente"
+            echo "GPO $nombreCuotaGrupoDos ya existe"
         }
 
-        echo "Reglas de almacenamiento configuradas correctamente"
+        Set-GPRegistryValue -Name $nombreCuotaGrupoUno `
+            -Key "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" `
+            -ValueName "MaxProfileSize" `
+            -Type DWord -Value 5000
+
+        Set-GPRegistryValue -Name $nombreCuotaGrupoDos `
+            -Key "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" `
+            -ValueName "MaxProfileSize" `
+            -Type DWord -Value 10000
+
+        New-GPLink -Name $nombreCuotaGrupoUno -Target "OU=grupo1,DC=dia-nino,DC=com" -Enforced "Yes"
+        New-GPLink -Name $nombreCuotaGrupoDos -Target "OU=grupo2,DC=dia-nino,DC=com" -Enforced "Yes"
+
+        echo "Regla de limites de almacenamiento de archivos creada correctamente"
     }
     catch {
         echo $Error[0].ToString()
