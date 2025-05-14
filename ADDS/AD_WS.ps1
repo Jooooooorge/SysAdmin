@@ -7,5 +7,9 @@
 # Un dominio con dos equipos (Linux | Windows)
 Import-Module .\WS.psm1 -Force
 
-InstalarADDS
-nuevoUsuarioAD -Dominio $Dominio
+function main {
+    InstalarADDS -Dominio "diadelnino" -NetBiosName "DANONINO"
+    ConfigADDS -Name1 "Grupo1" -Name2 "Grupo2"
+    AddUserStatic -Dominio "diadenino" -Nombre "Jorge" -Contraseña "Jorge123$" -Grupo "Grupo1"
+    AddUserStatic -Dominio "diadenino" -Nombre "Sebas" -Contraseña "Sebas123$" -Grupo "Grupo2"
+}

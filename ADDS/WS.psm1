@@ -1,4 +1,16 @@
+function InstalarADDS_Pro {
+    InstalarADDS -Dominio "diadelnino" -NetBiosName "DANONINO"
+    ConfigADDS -Name1 "Grupo1" -Name2 "Grupo2"
+    AddUserStatic -Dominio "diadenino" -Nombre "Jorge" -Contraseña "Jorge123$" -Grupo "Grupo1"
+    AddUserStatic -Dominio "diadenino" -Nombre "Sebas" -Contraseña "Sebas123$" -Grupo "Grupo2"
+    EstablecerHorarioGrupo1 -Nombre "Jorge"
+    EstablecerHorarioGrupo2 -Nombre "Sebas"
+}
 function InstalarADDS{
+    param(
+        [String] $Dominio, 
+        [String] $NetBiosName
+        )
     
     # Instalar el rol de Active Directory Domain Services
     Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
@@ -7,150 +19,62 @@ function InstalarADDS{
     Import-Module ADDSDeployment
 
     # Configurar el nuevo dominio
-    $Dominio = "jorge.com"  # Cambia esto si quieres otro nombre de dominio
-    Install-ADDSForest `
-        -DomainName $Dominio `
-        -DomainNetbiosName "jorge" `
-        -SafeModeAdministratorPassword (ConvertTo-SecureString "Jorge1234$" -AsPlainText -Force) `
-        -InstallDns `
-        -Force
+    Install-ADDSForest -DomainName $Dominio -DomainNetbiosName $NetBiosName -InstallDns 
 
-    New-ADOrganizationalUnit -Name "Cuates" -ProtectedFromAccidentalDeletion $true
-    New-ADOrganizationalUnit -Name "No_cuates" -ProtectedFromAccidentalDeletion $true
+}
+
+function ConfigADDS {
+    param (
+        [String] $Name1,
+        [String] $Name2
+    )
+    New-ADGroup -Name $Name1 -SamAccountName $Name1 -GroupScopte Global -GroupCategory Security
+    New-ADGroup -Name $Name2 -SamAccountName $Name2 -GroupScopte Global -GroupCategory Security
+    
     
 }
-function InstalarADDS_Pro {
-    $Usuario1 = "Usuario1"
-    $Usuario2 = "Usuario2"
-    # Instalar el rol de Active Directory Domain Services
-    Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
 
-    # Importar el módulo de AD
-    Import-Module ADDSDeployment
-
-    # Configurar el nuevo dominio
-    $Dominio = "diadelnino.com"  
-    Install-ADDSForest `
-        -DomainName $Dominio `
-        -DomainNetbiosName "diadelnino" `
-        -SafeModeAdministratorPassword (ConvertTo-SecureString "Jorge1234$" -AsPlainText -Force) `
-        -InstallDns `
-        -Force
-
-    # Creación las unidades organizativas UO
-    New-ADOrganizationalUnit -Name "Grupo1" -ProtectedFromAccidentalDeletion $true
-    New-ADOrganizationalUnit -Name "Grupo2" -ProtectedFromAccidentalDeletion $true
-    
-    # Separacíon de los componentes del dominio
+function AddUserStatic {
+    param(
+        [String] $Dominio,
+        [String] $Nombre,
+        [String] $Contraseña,
+        [String] $Grupo
+    )
     $Seg = $Dominio.Split(".")
     $Seg0 = $Seg[0]
     $Seg1 = $Seg[1]
-    
-    
-    # Creación de grupo 1 y grupo 2
-    New-ADGroup -Name "Grupo1" -SamAccountName "Grupo1" -GroupCategory Security -GroupScope Global -Path "OU=Grupo1,DC=$Seg0,DC=$Seg1"
-    New-ADGroup -Name "Grupo2" -SamAccountName "Grupo2" -GroupCategory Security -GroupScope Global -Path "OU=Grupo2,DC=$Seg0,DC=$Seg1"
 
-    # Creación de los dos usuarios, uno para cada UO
-    New-ADUser -Name $Usuario1 `
-        -GivenName $Usuario1 `
-        -Surname $Usuario1 `
-        -SamAccountName $Usuario1 `
-        -UserPrincipalName "$Usuario1@$Dominio" `
-        -Path "OU=Grupo1,DC=$Seg0,DC=$Seg1" `
-        -AccountPassword (ConvertTo-SecureString "Jorge123$" -AsPlainText -Force) `
-        -Enabled $true
-
-    New-ADUser -Name $Usuario2 `
-        -GivenName $Usuario2 `
-        -Surname $Usuario2 `
-        -SamAccountName $Usuario2 `
-        -UserPrincipalName "$Usuario2@$Dominio" `
-        -Path "OU=Grupo2,DC=$Seg0,DC=$Seg1" `
-        -AccountPassword (ConvertTo-SecureString "Jorge123$" -AsPlainText -Force) `
-        -Enabled $true
-
-    # Llamada a la función de set horarios
-    EstablecerHorario_Grupo1 -seg0 $Seg0 -seg1 $Seg1
-    EstablecerHorario_Grupo2 -seg0 $Seg0 -seg1 $Seg1
-    
-    # Llamada al función limitar tamaño
-    # LimitarTamaño
-
-
+    New-ADUser -Name $Nombre -GivenName $Nombre -Surname $Nombre -SamAccountName $Nombre -UserPrincipalName "$Nombre@$Dominio" -Path "OU=$Grupo, DC=$Seg0, DC=$Seg1" -ChangePasswordAtLogon $true -AccountPassword (ConvertTo-SecureString) $Contraseña -AsPlainText -Enabled $true
+    Add-ADGroupMember -Identity $Grupo -Members $Nombre    
 }
 
-function LimitarTamaño {
-    # Limitar el tamaño
-    New-Item -ItemType Directory -Path "D:\Grupo1"
-    
-    $acl = Get-Acl "D:\Grupo1"
-    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("Grupo1","FullControl","ContainerInherit,ObjectInherit","None","Allow")
-    $acl.SetAccessRule($rule)
-    Set-Acl "D:\Grupo1" $acl
-
-    fsutil quota track D:
-    fsutil quota enforce D:
-    fsutil quota modify D: 5242880 5242880 Grupo1
-
-    New-Item -ItemType Directory -Path "D:\Grupo2"
-    
-    # Permisos
-    $acl = Get-Acl "D:\Grupo2"
-    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("Grupo2","FullControl","ContainerInherit,ObjectInherit","None","Allow")
-    $acl.SetAccessRule($rule)
-    Set-Acl "D:\Grupo2" $acl
-
-    # Cuota
-    fsutil quota modify D: 10485760 10485760 Grupo2
-    
-}
-function EstablecerHorario_Grupo1 {
+function EstablecerHorarioGrupo1 {
     param (
-        [string] $seg0, [string] $seg1 
+        [string] $Nombre 
     )
-    # Definir la UO
-    $UO = "OU=Grupo1,DC=$seg0,DC=$seg1"
-
-    # Obtener todos los usuarios en esa UO
-    $usuarios = Get-ADUser -Filter * -SearchBase $UO
-    
     # Definiendo el horario de acceso
     # 3 bytes por dia, 1 bit por hora
-    # Permitiendo logon de L a S, de 8am a 3pm (hora 14)
+    # Permitiendo logon de L a S, de 8am a 3pm (hora 15)
     [byte[]]$horario = @(0,128,63,0,128,63,0,128,63,0,128,63,0,128,63,0,128,63,0,128,63)
-    
-    foreach ($usuario in $usuarios) {
-    
-        Get-ADUser -Identity $usuario |
-        Set-ADUser -Replace @{logonhours = $hours}
-    }
+    Get-ADUser -Identity $Nombre | Set-ADUser -Replace @{logonhours = $horario}
 }
-    
-function EstablecerHorario_Grupo2 {
+ 
+function EstablecerHorarioGrupo2 {
     param (
-        [string] $seg0, [string] $seg1 
+        [string] $Nombre 
     )
-    # Definir la UO
-    $UO = "OU=Grupo2,DC=$seg0,DC=$seg1"
-
-    # Obtener todos los usuarios en esa UO
-    $usuarios = Get-ADUser -Filter * -SearchBase $UO
-    
     # Definiendo el horario de acceso
     # 3 bytes por dia, 1 bit por hora
     # Permitiendo logon de L a S, de 3pm a 2am
     [byte[]]$horario = @(255,1,192,255,1,192,255,1,192,255,1,192,255,1,192,255,1,192,255,1,192)
-    
-    foreach ($usuario in $usuarios) {
-    
-        Get-ADUser -Identity $usuario |
-        Set-ADUser -Replace @{logonhours = $hours}
-    }
+    Get-ADUser -Identity $Nombre | Set-ADUser -Replace @{logonhours = $horario}
 }
 
 function nuevoUsuarioAD {
-    param([string] $Dominio)
+    param(
+        [string] $Dominio
+        )
     $Seg = $Dominio.Split(".")
     $Seg0 = $Seg[0]
     $Seg1 = $Seg[1]
