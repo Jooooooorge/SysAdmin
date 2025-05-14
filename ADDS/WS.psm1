@@ -1,8 +1,8 @@
 function InstalarADDS_Pro {
-    InstalarADDS -Dominio "diadelnino" -NetBiosName "DANONINO"
+    InstalarADDS -Dominio "diadelnino.com" -NetBiosName "DANONINO"
     ConfigADDS -Name1 "Grupo1" -Name2 "Grupo2"
-    AddUserStatic -Dominio "diadenino" -Nombre "Jorge" -Contrasena "Jorge123$" -Grupo "Grupo1"
-    AddUserStatic -Dominio "diadenino" -Nombre "Sebas" -Contrasena "Sebas123$" -Grupo "Grupo2"
+    AddUserStatic -Dominio "diadenino.com" -Nombre "Jorge" -Contrasena "Jorge123$" -Grupo "Grupo1"
+    AddUserStatic -Dominio "diadenino.com" -Nombre "Sebas" -Contrasena "Sebas123$" -Grupo "Grupo2"
     EstablecerHorarioGrupo1 -Nombre "Jorge"
     EstablecerHorarioGrupo2 -Nombre "Sebas"
 }
