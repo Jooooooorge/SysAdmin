@@ -29,7 +29,7 @@ function InstalarADDS_Pro {
     Import-Module ADDSDeployment
 
     # Configurar el nuevo dominio
-        $Dominio = "diadelnino.com"  
+    $Dominio = "diadelnino.com"  
     Install-ADDSForest `
         -DomainName $Dominio `
         -DomainNetbiosName "diadelnino" `
