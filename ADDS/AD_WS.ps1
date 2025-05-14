@@ -8,8 +8,8 @@
 Import-Module .\WS.psm1 -Force
 
 function main {
-    InstalarADDS -Dominio "diadelnino" -NetBiosName "DANONINO"
+    InstalarADDS -Dominio "diadelnino.com" -NetBiosName "DANONINO"
     ConfigADDS -Name1 "Grupo1" -Name2 "Grupo2"
-    AddUserStatic -Dominio "diadenino" -Nombre "Jorge" -Contraseña "Jorge123$" -Grupo "Grupo1"
-    AddUserStatic -Dominio "diadenino" -Nombre "Sebas" -Contraseña "Sebas123$" -Grupo "Grupo2"
+    AddUserStatic -Dominio "diadenino.com" -Nombre "Jorge" -Contraseña "Jorge123$" -Grupo "Grupo1"
+    AddUserStatic -Dominio "diadenino.com" -Nombre "Sebas" -Contraseña "Sebas123$" -Grupo "Grupo2"
 }
