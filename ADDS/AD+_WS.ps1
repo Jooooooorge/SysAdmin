@@ -19,19 +19,42 @@ function Configurar-DominioAD(){
 
 function Crear-UnidadesOrganizativas(){
     try {
-        if((Get-ADGroup -Filter "Name -eq 'grupo1'") -and (Get-ADGroup -Filter "Name -eq 'grupo2'") -and (Get-ADOrganizationalUnit -Filter "Name -eq 'grupo1'") -and (Get-ADOrganizationalUnit -Filter "Name -eq 'grupo2'")){
-            echo "Los grupos ya se encuentran creados en este equipo"
+        # Verificamos si ya existen las OUs
+        $ou1 = Get-ADOrganizationalUnit -Filter "Name -eq 'grupo1'" -ErrorAction SilentlyContinue
+        $ou2 = Get-ADOrganizationalUnit -Filter "Name -eq 'grupo2'" -ErrorAction SilentlyContinue
+
+        if ($ou1 -and $ou2) {
+            echo "Las unidades organizativas ya existen"
         }
-        else{
-            New-ADGroup -Name "grupo1" -SamAccountName "grupo1" -GroupScope Global -GroupCategory Security
-            New-ADGroup -Name "grupo2" -SamAccountName "grupo2" -GroupScope Global -GroupCategory Security
-            echo "Grupos creados correctamente"
+        else {
+            # Crear las OUs si no existen
+            if (-not $ou1) {
+                New-ADOrganizationalUnit -Name "grupo1" -Path "DC=dia-nino,DC=com"
+                echo "OU grupo1 creada"
+            }
+            if (-not $ou2) {
+                New-ADOrganizationalUnit -Name "grupo2" -Path "DC=dia-nino,DC=com"
+                echo "OU grupo2 creada"
+            }
         }
+
+        # Crear grupos si no existen
+        if (-not (Get-ADGroup -Filter "Name -eq 'grupo1'" -ErrorAction SilentlyContinue)) {
+            New-ADGroup -Name "grupo1" -SamAccountName "grupo1" -GroupScope Global -GroupCategory Security -Path "OU=grupo1,DC=dia-nino,DC=com"
+            echo "Grupo grupo1 creado"
+        }
+
+        if (-not (Get-ADGroup -Filter "Name -eq 'grupo2'" -ErrorAction SilentlyContinue)) {
+            New-ADGroup -Name "grupo2" -SamAccountName "grupo2" -GroupScope Global -GroupCategory Security -Path "OU=grupo2,DC=dia-nino,DC=com"
+            echo "Grupo grupo2 creado"
+        }
+
     }
     catch {
         echo $Error[0].ToString()
     }
 }
+
 
 function Es-ContrasenaValida($contrasena) {
     return ($contrasena.Length -ge 8 -and
