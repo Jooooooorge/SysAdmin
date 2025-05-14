@@ -30,7 +30,8 @@ function ConfigADDS {
     )
     New-ADGroup -Name $Name1 -SamAccountName $Name1 -GroupScopte Global -GroupCategory Security
     New-ADGroup -Name $Name2 -SamAccountName $Name2 -GroupScopte Global -GroupCategory Security
-    
+    New-ADOrganizationalUnit -Name $Name1 -ProtectedFromAccidentalDeletion $true
+    New-ADOrganizationalUnit -Name $Name2 -ProtectedFromAccidentalDeletion $true
     
 }
 
