@@ -1,8 +1,8 @@
 function InstalarADDS_Pro {
     InstalarADDS -Dominio "diadelnino" -NetBiosName "DANONINO"
     ConfigADDS -Name1 "Grupo1" -Name2 "Grupo2"
-    AddUserStatic -Dominio "diadenino" -Nombre "Jorge" -Contraseña "Jorge123$" -Grupo "Grupo1"
-    AddUserStatic -Dominio "diadenino" -Nombre "Sebas" -Contraseña "Sebas123$" -Grupo "Grupo2"
+    AddUserStatic -Dominio "diadenino" -Nombre "Jorge" -Contrasena "Jorge123$" -Grupo "Grupo1"
+    AddUserStatic -Dominio "diadenino" -Nombre "Sebas" -Contrasena "Sebas123$" -Grupo "Grupo2"
     EstablecerHorarioGrupo1 -Nombre "Jorge"
     EstablecerHorarioGrupo2 -Nombre "Sebas"
 }
@@ -38,14 +38,14 @@ function AddUserStatic {
     param(
         [String] $Dominio,
         [String] $Nombre,
-        [String] $Contraseña,
+        [String] $Contrasena,
         [String] $Grupo
     )
     $Seg = $Dominio.Split(".")
     $Seg0 = $Seg[0]
     $Seg1 = $Seg[1]
 
-    New-ADUser -Name $Nombre -GivenName $Nombre -Surname $Nombre -SamAccountName $Nombre -UserPrincipalName "$Nombre@$Dominio" -Path "OU=$Grupo, DC=$Seg0, DC=$Seg1" -ChangePasswordAtLogon $true -AccountPassword (ConvertTo-SecureString) $Contraseña -AsPlainText -Enabled $true
+    New-ADUser -Name $Nombre -GivenName $Nombre -Surname $Nombre -SamAccountName $Nombre -UserPrincipalName "$Nombre@$Dominio" -Path "OU=$Grupo, DC=$Seg0, DC=$Seg1" -ChangePasswordAtLogon $true -AccountPassword (ConvertTo-SecureString) $Contrasena -AsPlainText -Enabled $true
     Add-ADGroupMember -Identity $Grupo -Members $Nombre    
 }
 
