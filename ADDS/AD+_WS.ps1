@@ -13,7 +13,7 @@ function Configurar-DominioAD(){
     }
     else{
         Import-Module ADDSDeployment
-        Install-ADDSForest -DomainName "dia-nino.com" -DomainNetbiosName "DIANINO" -InstallDNS
+        Install-ADDSForest -DomainName "dia-nino.com" -DomainNetbiosName "Joooorge" -InstallDNS
     }
 }
 
