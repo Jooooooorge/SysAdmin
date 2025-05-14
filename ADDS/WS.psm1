@@ -46,7 +46,7 @@ function AddUserStatic {
     $Seg0 = $Seg[0]
     $Seg1 = $Seg[1]
 
-    New-ADUser -Name $Nombre -GivenName $Nombre -Surname $Nombre -SamAccountName $Nombre -UserPrincipalName "$Nombre@$Dominio" -Path "OU=$Grupo, DC=$Seg0, DC=$Seg1" -ChangePasswordAtLogon $true -AccountPassword (ConvertTo-SecureString) $Contrasena -AsPlainText -Enabled $true
+    New-ADUser -Name $Nombre -GivenName $Nombre -Surname $Nombre -SamAccountName $Nombre -UserPrincipalName "$Nombre@$Dominio" -Path "OU=$Grupo, DC=$Seg0, DC=$Seg1" -ChangePasswordAtLogon $true -AccountPassword (ConvertTo-SecureString $Contrasena -AsPlainText -Force) -Enabled $true
     Add-ADGroupMember -Identity $Grupo -Members $Nombre    
 }
 
