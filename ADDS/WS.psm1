@@ -1,8 +1,8 @@
 function InstalarADDS_Pro {
     InstalarADDS -Dominio "diadelnino.com" -NetBiosName "DANONINO"
     ConfigADDS -Name1 "Grupo1" -Name2 "Grupo2"
-    AddUserStatic -Dominio "diadenino.com" -Nombre "Jorge" -Contrasena "Jorge123$" -Grupo "Grupo1"
-    AddUserStatic -Dominio "diadenino.com" -Nombre "Sebas" -Contrasena "Sebas123$" -Grupo "Grupo2"
+    AddUserStatic -Dominio "diadelnino.com" -Nombre "Jorge" -Contrasena "Jorge123$" -Grupo "Grupo1"
+    AddUserStatic -Dominio "diadelnino.com" -Nombre "Sebas" -Contrasena "Sebas123$" -Grupo "Grupo2"
     EstablecerHorarioGrupo1 -Nombre "Jorge"
     EstablecerHorarioGrupo2 -Nombre "Sebas"
 }
@@ -28,10 +28,15 @@ function ConfigADDS {
         [String] $Name1,
         [String] $Name2
     )
-    New-ADGroup -Name $Name1 -SamAccountName $Name1 -GroupScopte Global -GroupCategory Security
-    New-ADGroup -Name $Name2 -SamAccountName $Name2 -GroupScopte Global -GroupCategory Security
-    New-ADOrganizationalUnit -Name $Name1 -ProtectedFromAccidentalDeletion $true
-    New-ADOrganizationalUnit -Name $Name2 -ProtectedFromAccidentalDeletion $true
+
+    $domainDN = (Get-ADDomain).DistinguishedName
+
+
+    New-ADOrganizationalUnit -Name $Name1 -Path $domainDN -ProtectedFromAccidentalDeletion $true
+    New-ADOrganizationalUnit -Name $Name2 -Path $domainDN -ProtectedFromAccidentalDeletion $true
+    New-ADGroup -Name $Name1 -SamAccountName $Name1 -GroupScope Global -GroupCategory Security -Path "OU=$Name1,$domainDN"
+    New-ADGroup -Name $Name2 -SamAccountName $Name2 -GroupScope Global -GroupCategory Security -Path "OU=$Name2,$domainDN"
+    
     
 }
 
