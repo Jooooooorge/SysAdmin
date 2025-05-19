@@ -139,6 +139,7 @@ full_setup() {
   echo "✔ Setup completo con datos."
 }
 
+
 while true; do
   cat <<EOF
 
@@ -152,7 +153,7 @@ Menú Docker:
 7) Crear tablas y datos de ejemplo
 8) psql en pg1/db1
 9) psql en pg2/db2
-10) Mostrar tablas (locales y remotas)
+10) Mostrar tablas (locales y remotas) 
 11) Todo (secuencia)
 12) Salir
 EOF
