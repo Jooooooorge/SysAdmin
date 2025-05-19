@@ -104,16 +104,10 @@ setup() {
     install_docker
     setup_postgres
     seed_data
+    menu
 }
-
-newImage() {
-    modify_index
-    build_image
-}
-
-# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----  ----- ----- ----- ----- ----- ----- ----- -----
-setup 
-
+menu() {
+  
 while true; do
     cat <<EOF
 Menu
@@ -134,3 +128,13 @@ EOF
 
     esac
 done
+}
+
+newImage() {
+    modify_index
+    build_image
+}
+
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----  ----- ----- ----- ----- ----- ----- ----- -----
+setup 
+
