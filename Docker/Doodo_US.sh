@@ -130,8 +130,6 @@ test_connectivity() {
 
 full_setup() {
   install_docker
-  modify_index
-  build_image
   setup_postgres
   seed_data
 }
